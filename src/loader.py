@@ -1,20 +1,21 @@
-
+'''
+Methods for parsing chromosomic data
+'''
 
 def load_breaks(file_location):
     '''
-    Reads a ".vcf.tsv" file, storing the breaks in a dictionary.
+    Reads a file, storing the breaks in a dictionary.
     Input:
-        file_location: complete path to "vcf.tsv" file, containing breaks in a genome
+        file_location: full path to file, containing breaks in a genome
     Output:
         breaks_by_chromosome: dictionary {str:[int]}, where keys are chromosome ids
-            and the corresponding list contains the position of breaks in that 
-            chromosome (sorted).
+            and the corresponding non-empty list contains the breaks in that chromosome (sorted).
         list_of_pairs: list[((str,int),(str,int))]. List of breaks, each entry contains
-            first chromosome and position within, second chromosome and position within
+            first chromosome and position within, second chromosome and position within.
     '''
     breaks_by_chromosome = {}
     list_of_pairs = []
-    #print 'Reading file:',file_location
+    #Process file by file
     with open(file_location) as f:
         #Skip the first line, which is a descriptor of fields
         f.next()
@@ -27,13 +28,16 @@ def load_breaks(file_location):
             chromosome2_pos = int(chromosome2_pos)
             #If its the first break found in this chromosome, initialize the chromosome list
             if chromosome1 not in breaks_by_chromosome.keys():
-                breaks_by_chromosome[chromosome1] = []
-            #Store the break in the corresponding dictionary entry of the chromosome
-            breaks_by_chromosome[chromosome1].append(chromosome1_pos)
+                breaks_by_chromosome[chromosome1] = [chromosome1_pos]
+            #Otherwise add it to the end
+            else:
+                breaks_by_chromosome[chromosome1].append(chromosome1_pos)
             #The same for the second chromosome
             if chromosome2 not in breaks_by_chromosome.keys():
-                breaks_by_chromosome[chromosome2] = []
-            breaks_by_chromosome[chromosome2].append(chromosome2_pos)
+                breaks_by_chromosome[chromosome2] = [chromosome2_pos]
+            else:
+                breaks_by_chromosome[chromosome2].append(chromosome2_pos)
+            #Also update the list of pairs
             list_of_pairs.append(((chromosome1, chromosome1_pos),
                     (chromosome2, chromosome2_pos)))
     #Sort the lists

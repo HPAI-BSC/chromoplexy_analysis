@@ -1,3 +1,4 @@
 results/*
-./data/*
+data
+data/*
 *.pyc

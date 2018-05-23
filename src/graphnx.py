@@ -1,15 +1,16 @@
-
+define a generate graph method, which is common to all three methods.
 
 def printGraph(adjacency_matrix, vertex_labels):
     '''
-    Input
-    adjancency_matrix: Squared 2D numpy matrix. Rows/Columns correspond to vertices. 
-        implies there is no edges between the corresponding vertices. Larger
-        values indicate the number of breaks going from one vertex to the other.
-        The matrix is symetrical, and the diagonal may contain self-edges. 
-    ex_labels: [str]. Of length equal to the length of adjacency matrix. 
-        The value in position x indicates the chromosome that the vertex at  
-    position x belongs to.
+    Plots the inputed graph using networkX
+    Input:
+        adjancency_matrix: Squared 2D numpy matrix. Rows/Columns correspond to vertices. 
+            A 0 indicates disconnection. Larger values indicate the number of breaks 
+            going from one vertex to the other.
+            The matrix is symetrical, and the diagonal contains self-edges. 
+        vertex_labels: [str]. Of length equal to the length of adjacency matrix. 
+            The value in position x indicates the chromosome that the vertex at  
+            position x belongs to.
     '''
     import matplotlib
     from matplotlib import pyplot as plt
@@ -23,11 +24,11 @@ def printGraph(adjacency_matrix, vertex_labels):
     dic_labels = {}
     for n,v in zip(x.nodes(),vertex_labels):
         dic_labels[n] = v
-    nx.set_node_attributes(x, 'chromosome', dic_labels)
-    #Undirected, to avoid duplicity
+    nx.set_node_attributes(x, dic_labels, 'chromosome')
+    #Undirected, to avoid redundancy of symmetric matrix
     x.to_undirected()
-    #print 'Number of vertices in networkX', x.number_of_nodes()
-    #print 'Number of edges in networkX', x.number_of_edges()
+    #print '|V| in networkX', x.number_of_nodes()
+    #print '|E| in networkX', x.number_of_edges()
     #Plot the graph, after removing isolated vertices
     x.remove_nodes_from(nx.isolates(x))
     #print 'Number of connected vertices', x.number_of_nodes()

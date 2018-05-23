@@ -1,4 +1,52 @@
-define a generate graph method, which is common to all three methods.
+'''
+This files contains all methods related with NetworkX functionalities
+'''
+
+def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected_only=True):
+    '''
+    Generates and returns a networkX graph with the input vertex labels and 
+    adjacency matrix. The graph is undirected.
+
+    Input:
+        adjancency_matrix: Squared 2D numpy matrix. Rows/Columns correspond to vertices. 
+            A 0 indicates disconnection. Larger values indicate the number of breaks 
+            going from one vertex to the other.
+            The matrix is symetrical, and the diagonal contains self-edges. 
+        vertex_labels: [str]. Of length equal to the length of adjacency matrix. 
+            The value in position x indicates the chromosome that the vertex at  
+            position x belongs to.
+        self_links: boolean. Are self links implemented in the graph? Defaults to False.
+        connected_only: boolean. Remove all isolated vertices. Defaults to True.
+    Output:
+    '''
+    import matplotlib
+    from matplotlib import pyplot as plt
+    import networkx as nx
+    import numpy as np
+    if self_links == False:
+        #Remove self-edges
+        np.fill_diagonal(adjacency_matrix, 0)
+    #Create graph
+    x = nx.from_numpy_matrix(adjacency_matrix)
+    #Create dictionary of labels to be added
+    dic_labels = {}
+    for n,v in zip(x.nodes(),vertex_labels):
+        dic_labels[n] = v
+    nx.set_node_attributes(x, dic_labels, 'chromosome')
+    #Undirected, to avoid redundancy of symmetric matrix
+    x.to_undirected()
+    #Remove isolated vertices if requested
+    if connected_only:
+        x.remove_nodes_from(nx.isolates(x))
+    return x
+
+def graphStatistics(graph):
+    '''
+
+    '''
+    print '|V| in networkX', x.number_of_nodes()
+    print '|E| in networkX', x.number_of_edges()
+
 
 def printGraph(adjacency_matrix, vertex_labels):
     '''

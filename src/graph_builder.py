@@ -50,26 +50,35 @@ def generateVertices(breaks, max_distance):
     vertex_labels, vertex_ranges = list(), list()
     #For each chromosome in the dictionary
     for chromosome in breaks.keys():
-        #Initialize the first vertex with the first break
-        first_break = breaks[chromosome][0]
-        current_break = breaks[chromosome][0]
-        #Process the rest of breaks, if any
-        for b in breaks[chromosome][1:]:
-            #If the next break is within max_distance, add it to the vertex
-            if b <= current_break + max_distance:
-                current_break = b
-            #Otherwise, the vertex is ended. Store and initialize the next one
-            else:
-                #Store the vertex label and its range
-                vertex_labels.append(chromosome)
-                #TODO: This may cause ranges larger than the full chromosome length. Add min with constant provided by LS. Continues below.
-                vertex_ranges.append((max(first_break - max_distance,0), current_break + max_distance))
-                #Initialize the next vertex
-                first_break, current_break = b, b
-        #Store the last vertex
-        vertex_labels.append(chromosome)
-        #TODO: Same as above
-        vertex_ranges.append((max(first_break - max_distance,0), current_break + max_distance))
+        #Keep a list of breaks added to vertices
+        added_breaks = []
+        #Iterate until all breaks have been assigned to a vertex.
+        while(len(added_breaks)!=len(set(breaks[chromosome]))):
+            #Find the first unassigned break
+            vertex_seed = [x for x in breaks[chromosome] if x not in added_breaks][0]
+            #Initialize the start/end of vertex counter around it
+            ini_of_vertex = vertex_seed - max_distance
+            end_of_vertex = vertex_seed + max_distance
+            #Iterate until no more breaks can be added (at least one will)
+            vertex_done = False
+            while not vertex_done:
+                vertex_done=True
+                #Add all breaks within range
+                for current_break in breaks[chromosome]:
+                    #Skip the added ones
+                    if current_break in added_breaks:
+                        #print 'Skipping it, already added'
+                        continue
+                    #Check if its within range
+                    if ini_of_vertex < current_break < end_of_vertex:
+                        added_breaks.append(current_break)
+                        ini_of_vertex = min(ini_of_vertex,current_break - max_distance)
+                        end_of_vertex = max(end_of_vertex,current_break + max_distance)
+                        vertex_done = False
+            #Once the vertex is done, store it
+            vertex_labels.append(chromosome)
+            #TODO: This may cause ranges larger than the full chromosome length. Add "min(end_of_vertex,X)))" with X provided by LS.
+            vertex_ranges.append((max(ini_of_vertex,0), end_of_vertex))
     return vertex_labels, vertex_ranges
 
 

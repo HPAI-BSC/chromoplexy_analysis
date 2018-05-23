@@ -4,17 +4,15 @@ Generate a graph from each patient data, and plot it.
 
 from loader import load_breaks
 from graph_builder import generateGraph
-from graphnx import printGraph
+from graphnx import generateNXGraph, printGraph
 
 import os
 import sys
 
 if len(sys.argv)!=2:
-    raise Exception('This function must be called with one parameter. An integer indicating the length of the window.')
+    raise Exception('This function must be called with one parameter. An integer indicating the length of the sliding window.')
 
 max_distance = int(sys.argv[1])
-
-
 
 #Directory containing the files
 data_path = '../data/allfiles'
@@ -25,8 +23,13 @@ for file_name in os.listdir(data_path):
     if len(breaks) == 0:
         print 'WARNING: Empty data file',file_name
         continue
-    #Generate the graph
+    #Generate the vertices and edges
     adjacency_matrix, vertex_labels, vertex_ranges = generateGraph(breaks, list_of_pairs, max_distance)
+    #Create the graph
+    g = generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected_only=True)
     #Print the graph
-    printGraph(adjacency_matrix, vertex_labels)
+    print 'Showing graph of ',file_name
+    printGraph(g)
+
+    print vertex_ranges
 

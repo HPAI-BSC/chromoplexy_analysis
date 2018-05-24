@@ -4,7 +4,7 @@ This file contains all methods related with NetworkX functionalities
 
 import networkx as nx
 
-def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected_only=True):
+def generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, self_links=False, connected_only=True):
     '''
     Generates and returns a networkX graph with the input vertex labels and 
     adjacency matrix. The graph is undirected.
@@ -17,6 +17,9 @@ def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected
         vertex_labels: [str]. Of length equal to the length of adjacency matrix. 
             The value in position x indicates the chromosome that the vertex at  
             position x belongs to.
+        vertex_ranges: [(int,int)]. List of vertices generated. 
+            The value in position x indicates the range of values of that vertex. That is: 
+                (first_break - max_distance, last_break + max_distance)
         self_links: boolean. Are self links implemented in the graph? Defaults to False.
         connected_only: boolean. Remove all isolated vertices. Defaults to True.
     Output:
@@ -27,11 +30,14 @@ def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected
         np.fill_diagonal(adjacency_matrix, 0)
     #Create graph
     x = nx.from_numpy_matrix(adjacency_matrix)
-    #Create dictionary of labels to be added
+    #Create dictionaries of attributes
     dic_labels = {}
-    for n,v in zip(x.nodes(),vertex_labels):
+    dic_ranges = {}
+    for n,v,r in zip(x.nodes(),vertex_labels,vertex_ranges):
         dic_labels[n] = v
+        dic_ranges[n] = r
     nx.set_node_attributes(x, dic_labels, 'chromosome')
+    nx.set_node_attributes(x, dic_ranges, 'range')
     #Undirected, to avoid redundancy of symmetric matrix
     x.to_undirected()
     #Remove isolated vertices if requested
@@ -92,14 +98,14 @@ def printGraph(graph):
 #    return cliques 
 #
 #
-def computeSubgraphs(graph):
-    '''
-    Input:
-        graph: networkX graph to compute subgraphs on
-    '''
-    import matplotlib
-    from matplotlib import pyplot as plt
-    return list(nx.connected_component_subgraphs(graph))
+#def computeSubgraphs(graph):
+#    '''
+#    Input:
+#        graph: networkX graph to compute subgraphs on
+#    '''
+#    import matplotlib
+#    from matplotlib import pyplot as plt
+#    return list(nx.connected_component_subgraphs(graph))
 
 
 #UNTESTED METHOD

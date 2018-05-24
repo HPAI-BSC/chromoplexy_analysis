@@ -92,14 +92,14 @@ def printGraph(graph):
 #    return cliques 
 #
 #
-#def computeSubgraphs(graph):
-#    '''
-#    Input:
-#        graph: networkX graph to compute subgraphs on
-#    '''
-#    import matplotlib
-#    from matplotlib import pyplot as plt
-#    return list(nx.connected_component_subgraphs(graph))
+def computeSubgraphs(graph):
+    '''
+    Input:
+        graph: networkX graph to compute subgraphs on
+    '''
+    import matplotlib
+    from matplotlib import pyplot as plt
+    return list(nx.connected_component_subgraphs(graph))
 
 
 #UNTESTED METHOD

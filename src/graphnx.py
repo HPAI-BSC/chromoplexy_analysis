@@ -1,9 +1,8 @@
 '''
-This files contains all methods related with NetworkX functionalities
+This file contains all methods related with NetworkX functionalities
 '''
 
 import networkx as nx
-import numpy as np
 
 def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected_only=True):
     '''
@@ -22,6 +21,7 @@ def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected
         connected_only: boolean. Remove all isolated vertices. Defaults to True.
     Output:
     '''
+    import numpy as np
     if self_links == False:
         #Remove self-edges
         np.fill_diagonal(adjacency_matrix, 0)
@@ -38,22 +38,6 @@ def generateNXGraph(adjacency_matrix, vertex_labels, self_links=False, connected
     if connected_only:
         x.remove_nodes_from(nx.isolates(x))
     return x
-
-
-def graphStatistics(graph):
-    '''
-    Print statistics of a graph.
-    Input:
-        graph: networkX graph to compute statistics on
-    '''
-    print '|V| in networkX', graph.number_of_nodes()
-    print '|E| in networkX', graph.number_of_edges()
-    print 'Number of connected vertices', graph.number_of_nodes()
-    print 'Number of connected components', nx.number_connected_components(graph)
-    print 'Number of 3-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==3])
-    print 'Number of 4-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==4])
-    print 'Number of 5-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==5])
-    return
 
 
 def printGraph(graph):
@@ -79,39 +63,58 @@ def printGraph(graph):
     return
 
 
-def getCliques(graph):
-    '''
-    Input:
-        graph: networkx graph to compute cliques on
-    '''
-    import matplotlib
-    from matplotlib import pyplot as plt
-    return len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==3]), len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==4])
+#def getCliques(graph):
+#    '''
+#    Input:
+#        graph: networkx graph to compute cliques on
+#    '''
+#    import matplotlib
+#    from matplotlib import pyplot as plt
+#    return len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==3]), len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==4])
+#
+#
+#def getAllCliques(graph):
+#    '''
+#    Returns the number of cliques in the graph. Starts with size 3 and keeps increasing the size until no cliques are found. Return structure is a dictionary where the key is the clique size, and the value is the number of cliques found.
+#    Input:
+#        graph: networkX graph to compute cliques on
+#    '''
+#    import matplotlib
+#    from matplotlib import pyplot as plt
+#    cliques = {}
+#    current_size = 3
+#    while True:
+#        current_cliques = len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==current_size])
+#        cliques[current_size] = current_cliques
+#        if current_cliques == 0:
+#            break
+#        current_size+=1
+#    return cliques 
+#
+#
+#def computeSubgraphs(graph):
+#    '''
+#    Input:
+#        graph: networkX graph to compute subgraphs on
+#    '''
+#    import matplotlib
+#    from matplotlib import pyplot as plt
+#    return list(nx.connected_component_subgraphs(graph))
 
-def getAllCliques(graph):
-    '''
-    Returns the number of cliques in the graph. Starts with size 3 and keeps increasing the size until no cliques are found. Return structure is a dictionary where the key is the clique size, and the value is the number of cliques found.
-    Input:
-        graph: networkX graph to compute cliques on
-    '''
-    import matplotlib
-    from matplotlib import pyplot as plt
-    cliques = {}
-    current_size = 3
-    while True:
-        current_cliques = len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==current_size])
-        cliques[current_size] = current_cliques
-        if current_cliques == 0:
-            break
-        current_size+=1
-    return cliques 
 
+#UNTESTED METHOD
+#def graphStatistics(graph):
+#    '''
+#    Print statistics of a graph.
+#    Input:
+#        graph: networkX graph to compute statistics on
+#    '''
+#    print '|V| in networkX', graph.number_of_nodes()
+#    print '|E| in networkX', graph.number_of_edges()
+#    print 'Number of connected vertices', graph.number_of_nodes()
+#    print 'Number of connected components', nx.number_connected_components(graph)
+#    print 'Number of 3-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==3])
+#    print 'Number of 4-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==4])
+#    print 'Number of 5-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==5])
+#    return
 
-def computeSubgraphs(graph):
-    '''
-    Input:
-        graph: networkX graph to compute subgraphs on
-    '''
-    import matplotlib
-    from matplotlib import pyplot as plt
-    return list(nx.connected_component_subgraphs(graph))

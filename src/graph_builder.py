@@ -1,5 +1,5 @@
 '''
-Methods for generating graph representations
+Methods for generating graph representations (vertices and edges) from breaks
 '''
 
 def generateGraph(breaks, list_of_pairs, max_distance):

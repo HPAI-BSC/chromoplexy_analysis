@@ -1,5 +1,5 @@
 '''
-This file contains all methods related with NetworkX functionalities
+This file contains all methods related with networkX functionalities
 '''
 
 import networkx as nx
@@ -69,6 +69,7 @@ def printGraph(graph):
     return
 
 
+#UNTESTED METHOD
 #def getCliques(graph):
 #    '''
 #    Input:
@@ -77,7 +78,6 @@ def printGraph(graph):
 #    import matplotlib
 #    from matplotlib import pyplot as plt
 #    return len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==3]), len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==4])
-#
 #
 #def getAllCliques(graph):
 #    '''
@@ -97,18 +97,6 @@ def printGraph(graph):
 #        current_size+=1
 #    return cliques 
 #
-#
-#def computeSubgraphs(graph):
-#    '''
-#    Input:
-#        graph: networkX graph to compute subgraphs on
-#    '''
-#    import matplotlib
-#    from matplotlib import pyplot as plt
-#    return list(nx.connected_component_subgraphs(graph))
-
-
-#UNTESTED METHOD
 #def graphStatistics(graph):
 #    '''
 #    Print statistics of a graph.
@@ -123,4 +111,3 @@ def printGraph(graph):
 #    print 'Number of 4-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==4])
 #    print 'Number of 5-cliques', len([c for c in list(nx.enumerate_all_cliques(graph)) if len(c)==5])
 #    return
-

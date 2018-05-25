@@ -17,9 +17,9 @@ max_distance = int(sys.argv[1])
 clique_size = int(sys.argv[2])
 
 #Output files
-file1 = open('../results/'+str(clique_size)+'-cliques_number_per_patient.csv','w')
-file2 = open('../results/'+str(clique_size)+'-cliques_location_per_patient.csv','w')
-file3 = open('../results/'+str(clique_size)+'-cliques_ranges_per_patient.csv','w')
+file1 = open('../results/'+str(clique_size)+'-cliques_number_per_patient_w'+str(max_distance)+'.csv','w')
+file2 = open('../results/'+str(clique_size)+'-cliques_location_per_patient_w'+str(max_distance)+'.csv','w')
+file3 = open('../results/'+str(clique_size)+'-cliques_ranges_per_patient_w'+str(max_distance)+'.csv','w')
 
 #Directory containing the files
 data_path = '../data/allfiles'

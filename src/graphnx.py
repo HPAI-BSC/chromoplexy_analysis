@@ -42,7 +42,7 @@ def generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, self_links=F
     x.to_undirected()
     #Remove isolated vertices if requested
     if connected_only:
-        x.remove_nodes_from(nx.isolates(x))
+        x.remove_nodes_from(list(nx.isolates(x)))
     return x
 
 

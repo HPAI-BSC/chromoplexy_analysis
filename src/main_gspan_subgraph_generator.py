@@ -1,7 +1,7 @@
 '''
-Reads chromoplexy breaks, generates a graph using a sliding window of fixed size, and stores all the resulting connected subraphs in a file compatible with gSpan[1].
+Reads chromoplexy breaks, generates a graph using a sliding window of fixed size, and stores all the resulting connected subraphs in a file compatible with an implementation of gSpan [1].
 Discards all subgraphs with less than 3 vertices or 3 edges.
-[1] 
+[1] https://github.com/betterenvi/gSpan
 '''
 
 from loader import load_breaks

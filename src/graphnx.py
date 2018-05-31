@@ -46,11 +46,13 @@ def generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, self_links=F
     return x
 
 
-def printGraph(graph):
+def printGraph(graph, visualize = True):
     '''
     Plots the inputed graph using networkX
     Input:
         graph: networkx graph to plot
+        visualize: boolean. If true shows the graph interactively.
+                            If false, returns the plot object
     '''
     import matplotlib
     from matplotlib import pyplot as plt
@@ -64,9 +66,11 @@ def printGraph(graph):
     #Set chromosome as node label and print them
     labels = nx.get_node_attributes(graph, 'chromosome')
     nx.draw_networkx_labels(graph, pos, labels=labels, font_size = 20)
-    #Show the graph
-    plt.show()
-    return
+    if visualize:
+        #Show the graph
+        plt.show()
+        return
+    return plt
 
 
 #UNTESTED METHOD

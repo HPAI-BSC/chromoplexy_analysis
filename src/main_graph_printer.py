@@ -1,5 +1,5 @@
 '''
-Exanoke to generate a graph from each patient data, and plot it.
+Generate a graph from each patient data, and plot it.
 '''
 
 from loader import load_breaks

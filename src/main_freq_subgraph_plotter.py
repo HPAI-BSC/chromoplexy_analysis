@@ -1,12 +1,18 @@
 import numpy as np
 import networkx as nx
+import os
+import sys
 
 def generateNXGraphLite(adj_mat):
     x = nx.from_numpy_matrix(adj_mat)
     return x
 
-file_location = "../results/gspan_1K_frequent_subgraphs_old.txt"
-with open(file_location) as f:
+if len(sys.argv)!=2:
+        raise Exception('This function must be called with one parameter. The full path (either relative or absolute) to the file containing the frequent subgraphs.')
+
+file_path, file_name = os.path.split(sys.argv[1])
+
+with open(os.path.join(file_path,file_name)) as f:
     graphs = []
     supports = []
     for l in f:
@@ -43,7 +49,7 @@ supports = sorted(supports, reverse=True)
 #Store all subgraphs in a file
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-with PdfPages('../results/frequent_subgraphs.pdf') as pdf:
+with PdfPages(os.path.join(file_path,os.path.splitext(file_name)[0]+'.pdf')) as pdf:
     for graph,support in zip(graphs,supports):
         plt.figure(figsize=(7,7))
         plt.axis('off')

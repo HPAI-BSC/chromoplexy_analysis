@@ -2,3 +2,5 @@ results/*
 data
 data/*
 *.pyc
+venv/*
+.idea/*

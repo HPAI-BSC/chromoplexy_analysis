@@ -34,8 +34,9 @@ In this step we generate a graph per patient, in order to simplify the study.
 **output**
 
 **files**
-- main_clique_analysis
-- main_freq_subgraph
+- *main_gspan_subgraph_generator*: This file has the code to generate the gspan subgraphs. 
+- *main_clique_analysis*: This code generates a graphs from the breaks data. Given a clique size, computes and stores the number of cliques, their chromosomic location, and their range within the chromosome, per patient.
+- *main_freq_subgraph*:
 
 ### Step 3: Classification
 
@@ -48,3 +49,7 @@ In this step we generate a graph per patient, in order to simplify the study.
 - New structure to the code
 - Add the weight to the vertex (done)
 - Make the classification part 
+- Find a chronotripsis criteria. 
+
+#### Notas:
+. Take care of overfitting. 

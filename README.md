@@ -21,7 +21,11 @@ if it has chromoplexy or not the number of chromoplexy events, the **cancer type
 
 In this step we generate a graph per patient, in order to simplify the study. 
 
-
+**files**
+- loader
+- graph_builder
+- graphnx
+- main_graph_printer
 
 ### Step 2: Graph analysis
 
@@ -34,3 +38,9 @@ In this step we generate a graph per patient, in order to simplify the study.
 **input**
 
 **output**
+
+
+#### TODO: 
+- New structure to the code
+- Add the weight to the vertex 
+- Make the classification part 

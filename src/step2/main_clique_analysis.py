@@ -2,13 +2,16 @@
 This code generates a graphs from the breaks data. Given a clique size, computes and stores the number of cliques, their chromosomic location, and their range within the chromosome, per patient.
 '''
 
-from loader import load_breaks
-from graph_builder import generateGraph
-from graphnx import generateNXGraph
+import sys
+import os
+
+sys.path.insert(1, '../src')
+
+from step1.loader import load_breaks
+from step1.graph_builder import generateGraph
+from step1.graphnx import generateNXGraph
 import networkx as nx
 
-import os
-import sys
 
 if len(sys.argv)!=3:
     raise Exception('This function must be called with two parameters. An integer indicating the length of the sliding window, and an integer with the clique size.')

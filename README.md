@@ -33,6 +33,10 @@ In this step we generate a graph per patient, in order to simplify the study.
 
 **output**
 
+**files**
+- main_clique_analysis
+- main_freq_subgraph
+
 ### Step 3: Classification
 
 **input**
@@ -42,5 +46,5 @@ In this step we generate a graph per patient, in order to simplify the study.
 
 #### TODO: 
 - New structure to the code
-- Add the weight to the vertex 
+- Add the weight to the vertex (done)
 - Make the classification part 

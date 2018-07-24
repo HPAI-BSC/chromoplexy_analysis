@@ -1,7 +1,11 @@
-import numpy as np
-import networkx as nx
 import os
 import sys
+
+sys.path.insert(1, '../src')
+
+import numpy as np
+import networkx as nx
+
 
 def generateNXGraphLite(adj_mat):
     x = nx.from_numpy_matrix(adj_mat)

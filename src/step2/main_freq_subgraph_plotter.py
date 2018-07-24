@@ -43,11 +43,11 @@ with open(os.path.join(file_path, file_name)) as f:
 				adj_mat = np.zeros((len(vertices), len(vertices)))
 				first_edge = False
 			# Add edge
-			print(l, adj_mat)
+			# print(l, adj_mat)
 			adj_mat[int(l.split(' ')[1]), int(l.split(' ')[2])] += 1
-	# Its the graph support. Store it.
-	if l[0] == 'S':
-		support = int(l.split(' ')[1])
+		# Its the graph support. Store it.
+		if l[0] == 'S':
+			support = int(l.split(' ')[1])
 
 # Order graphs by support
 graphs = [x for _, x in sorted(zip(supports, graphs), reverse=True)]

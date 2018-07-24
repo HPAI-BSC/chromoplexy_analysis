@@ -25,10 +25,12 @@ def generateGraph(breaks, list_of_pairs, max_distance):
 		vertex_ranges: [(int,int)]. Of length equal to the length of adjacency matrix.
 			The value in position x indicates the range of values of the vertex at
 			position x. That is (first_break - max_distance, last_break + max_distance)
+		vertex_weights: [int]. List of the weight of each vertex. The value in position x indicates the weight of that
+			vertex. This weight represents the number of breaks of this vertex.
 	'''
-	vertex_labels, vertex_ranges = generateVertices(breaks, max_distance)
+	vertex_labels, vertex_ranges, vertex_weights = generateVertices(breaks, max_distance)
 	adjacency_matrix = generateEdges(list_of_pairs, vertex_labels, vertex_ranges)
-	return adjacency_matrix, vertex_labels, vertex_ranges
+	return adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights
 
 
 def generateVertices(breaks, max_distance):
@@ -45,6 +47,8 @@ def generateVertices(breaks, max_distance):
 		vertex_ranges: [(int,int)]. List of vertices generated.
 			The value in position x indicates the range of values of that vertex. That is:
 				(first_break - max_distance, last_break + max_distance)
+		vertex_weights: [int]. List of the weight of each vertex. The value in position x indicates the weight of that
+			vertex. This weight represents the number of breaks of this vertex.
 	'''
 	# Create variables
 	vertex_labels, vertex_ranges, vertex_weights = list(), list(), list()

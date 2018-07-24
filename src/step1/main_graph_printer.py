@@ -29,11 +29,11 @@ for file_name in os.listdir(data_path):
 		print 'WARNING: Empty data file', file_name
 		continue
 	# Generate the vertices and edges
-	adjacency_matrix, vertex_labels, vertex_ranges = generateGraph(breaks, list_of_pairs, max_distance)
+	adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs, max_distance)
 	# Create the graph
-	g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, self_links=False, connected_only=True)
+	g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges,vertex_weights, self_links=False, connected_only=True)
 	# Print the graph
 	print 'Showing graph of ', file_name
-	printGraph(g)
+	printGraph(g,show_vertex_weights=False)
 
 	print vertex_ranges

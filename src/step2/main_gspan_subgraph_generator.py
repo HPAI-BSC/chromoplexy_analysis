@@ -35,6 +35,7 @@ def generate_all_subgraphs():
 	# Directory containing the files
 	data_path = DATAPATH + '/allfiles'
 	# Iterate over the files
+	count = 0
 	for filename in os.listdir(data_path):
 		breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename))
 		if len(breaks) == 0:
@@ -46,7 +47,9 @@ def generate_all_subgraphs():
 		candidates = list(nx.connected_component_subgraphs(g))
 		for c in candidates:
 			if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:
+				print count, filename
 				subgraphs.append(c)
+				count +=1
 
 	# Iterate over subgraphs and store
 	with open(DATAPATH + '/results/gspan_subgraphs_w' + str(max_distance) + '.txt', 'w') as f:

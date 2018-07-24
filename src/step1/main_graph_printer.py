@@ -21,19 +21,41 @@ else:
 
 # Directory containing the files
 data_path = '../data/allfiles'
-# Iterate over the files
-for file_name in os.listdir(data_path):
+def plot_all():
+	# Iterate over the files
+	for file_name in os.listdir(data_path):
+		# Load the brakes
+		breaks, list_of_pairs = load_breaks(os.path.join(data_path, file_name))
+		if len(breaks) == 0:
+			print 'WARNING: Empty data file', file_name
+			continue
+		# Generate the vertices and edges
+		adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs, max_distance)
+		# Create the graph
+		g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges,vertex_weights, self_links=False, connected_only=True)
+		# Print the graph
+		print 'Showing graph of ', file_name
+		printGraph(g,show_vertex_weights=False)
+
+		print vertex_ranges
+
+
+def plot_one_file(file_name):
 	# Load the brakes
 	breaks, list_of_pairs = load_breaks(os.path.join(data_path, file_name))
 	if len(breaks) == 0:
 		print 'WARNING: Empty data file', file_name
-		continue
 	# Generate the vertices and edges
 	adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs, max_distance)
 	# Create the graph
-	g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges,vertex_weights, self_links=False, connected_only=True)
+	g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights, self_links=False,
+						connected_only=True)
 	# Print the graph
 	print 'Showing graph of ', file_name
-	printGraph(g,show_vertex_weights=False)
+	printGraph(g, show_vertex_weights=False)
 
 	print vertex_ranges
+
+file = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
+
+plot_one_file(file)

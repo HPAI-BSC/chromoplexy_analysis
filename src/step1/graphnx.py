@@ -66,7 +66,7 @@ def printGraph(graph, visualize=True, show_vertex_weights=False):
 	import matplotlib
 	from matplotlib import pyplot as plt
 	# Plot with matplotlib
-	plt.figure(figsize=(7, 7))
+	plt.figure(figsize=(20,20))
 	edges, weights = zip(*nx.get_edge_attributes(graph, 'weight').items())
 	pos = nx.spring_layout(graph, k=0.5, iterations=30)
 	# pos = nx.spectral_layout(graph)

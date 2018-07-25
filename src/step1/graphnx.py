@@ -53,7 +53,7 @@ def generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weigh
 	return x
 
 
-def printGraph(graph, visualize=True, show_vertex_weights=False):
+def printGraph(graph, name=None, visualize=True, show_vertex_weights=False):
 	'''
 	Plots the inputed graph using networkX
 	Input:
@@ -63,7 +63,6 @@ def printGraph(graph, visualize=True, show_vertex_weights=False):
 		show_vertex_weights: boolean. If true shows the weight (the number of breaks of the vertex) of the vertex as label.
 								If false shows the chromosome of the vertex as label.
 	'''
-	import matplotlib
 	from matplotlib import pyplot as plt
 	# Plot with matplotlib
 	plt.figure(figsize=(20,20))
@@ -82,6 +81,13 @@ def printGraph(graph, visualize=True, show_vertex_weights=False):
 		# Show the graph
 		plt.show()
 		return
+	if name:
+		import os
+		try:
+			os.mkdir('../data/plots')
+		except:
+			pass
+		plt.savefig('../data/plots/' + name + '.png')
 	return plt
 
 # UNTESTED METHOD

@@ -24,13 +24,9 @@ try:
 except:
 	pass
 
-if len(sys.argv) != 2:
-	raise Exception(
-		'This function must be called with one parameter. An integer indicating the length of the sliding window.')
-max_distance = int(sys.argv[1])
 
 
-def generate_all_subgraphs():
+def generate_all_patient_graphs(max_distance):
 	subgraphs = []
 	# Directory containing the files
 	data_path = DATAPATH + '/allfiles'
@@ -65,8 +61,52 @@ def generate_all_subgraphs():
 				f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' 2\n')
 
 
+def generate_one_patient_graph(filename, max_distance):
+	subgraphs = []
+	# Directory containing the files
+	data_path = DATAPATH + '/allfiles'
+	# Iterate over the files
+	count = 0
+
+	breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename))
+	if len(breaks) == 0:
+		# print 'WARNING: Empty data file',file_name
+		return
+	adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,
+																				   max_distance)
+	g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights, self_links=False,
+						connected_only=True)
+	candidates = list(nx.connected_component_subgraphs(g))
+	for c in candidates:
+		if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:
+			print count, filename
+			subgraphs.append(c)
+			count += 1
+
+	# store
+	try:
+		os.mkdir(DATAPATH + '/allfiles_gspan_format')
+	except:
+		pass
+
+	with open(DATAPATH + '/allfiles_gspan_format/'+ filename + '.txt', 'w') as f:
+		counter = 0
+		for g in subgraphs:
+			f.write('t # ' + str(counter) + '\n')
+			counter += 1
+			# Iterate over vertices
+			for v in g.nodes():
+				f.write('v ' + str(v) + ' 2\n')
+			# Iterate over all edges
+			for edge in g.edges():
+				f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' 2\n')
+
 def main():
-	generate_all_subgraphs()
+	if len(sys.argv) != 2:
+		raise Exception(
+			'This function must be called with one parameter. An integer indicating the length of the sliding window.')
+	max_distance = int(sys.argv[1])
+	generate_all_patient_graphs(max_distance)
 
 if __name__ == '__main__':
 	init = time.time()

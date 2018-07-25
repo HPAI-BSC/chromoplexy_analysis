@@ -52,10 +52,18 @@ def plot_one_file(file_name):
 						connected_only=True)
 	# Print the graph
 	print 'Showing graph of ', file_name
-	printGraph(g, show_vertex_weights=False)
+	printGraph(g, name=file_name,visualize=False, show_vertex_weights=False)
 
-	print vertex_ranges
+	# print vertex_ranges
 
-file = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
+def main():
+	test_file = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
+	plot_one_file(test_file)
 
-plot_one_file(file)
+
+if __name__ == '__main__':
+	import time
+	from datetime import  timedelta
+	init = time.time()
+	main()
+	print('time:', timedelta(seconds=time.time() - init))

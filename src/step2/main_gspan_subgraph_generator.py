@@ -17,7 +17,7 @@ import networkx as nx
 from datetime import timedelta
 import time
 
-DATAPATH = '../data'
+DATAPATH = '../../data'
 
 try:
 	os.mkdir(DATAPATH + '/results')
@@ -61,7 +61,7 @@ def generate_all_patient_graphs(max_distance):
 				f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' 2\n')
 
 
-def generate_one_patient_graph(filename, max_distance):
+def generate_one_patient_graph(filename, max_distance, with_vertex_weight=False,with_vertex_chromosome=False, with_edge_weight=False):
 	subgraphs = []
 	# Directory containing the files
 	data_path = DATAPATH + '/allfiles'
@@ -96,10 +96,21 @@ def generate_one_patient_graph(filename, max_distance):
 			counter += 1
 			# Iterate over vertices
 			for v in g.nodes():
-				f.write('v ' + str(v) + ' 2\n')
+				if with_vertex_weight:
+					weight = g.nodes[v]['weights']
+				elif with_vertex_chromosome:
+					weight = g.nodes[v]['chromosome']
+				else:
+					weight = 2
+				f.write('v ' + str(v) + ' ' + str(weight) + '\n')
 			# Iterate over all edges
+			print g.edges
 			for edge in g.edges():
-				f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' 2\n')
+				if with_edge_weight:
+					weight = g.edges[edge]['weight']
+				else:
+					weight = 2
+				f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) +' '+ str(weight) + '\n')
 
 def main():
 	if len(sys.argv) != 2:

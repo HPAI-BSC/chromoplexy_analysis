@@ -28,7 +28,7 @@ from gspan_mining.main import main as gspanmain
 from datetime import timedelta
 import time
 
-DATAPATH = '../data'
+DATAPATH = '../../data'
 PATIENT_PATH = DATAPATH + '/one_patient_test'
 
 try:
@@ -36,20 +36,22 @@ try:
 except:
 	pass
 
-def generate_subgraphs(gspan_file_name, l=3,s=1):
+def generate_subgraphs(gspan_file_name, l=3,s=1, plot=False):
 	filepath = DATAPATH + '/allfiles_gspan_format/'+ gspan_file_name + '.txt'
 	args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' +filepath
-	print(args_str)
 	FLAGS, _ = parser.parse_known_args(args=args_str.split())
 	gs =  gspanmain(FLAGS)
+	if plot:
+		for g in gs.graphs.values():
+			g.plot()
 	return gs
 
 
-def process_patient(patient_id, plot_graph=False):
+def process_patient(patient_id, plot_graph=False, max_distance=1000):
 	if plot_graph:
 		plot_one_file(patient_id)
-	generate_one_patient_graph(patient_id, 1000)
-	generate_subgraphs(patient_id)
+	generate_one_patient_graph(patient_id, max_distance,with_vertex_weight=False,with_vertex_chromosome=True,with_edge_weight=False)
+	subgraphs = generate_subgraphs(patient_id,plot=True)
 
 
 

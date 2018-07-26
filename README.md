@@ -72,7 +72,6 @@ python step2/main_freq_subgraph_plotter.py '../data/results/gspan_output.txt'
 - New structure to the code (done)
 - Add the weight to the vertex (done)
 - Make the classification part 
-- Find a chronotripsis criteria. + Make some histograms of the weights of the vertex depending on the max_distance given. 
 - New code for subgraph feature extraction: 
     For every patient: 
         1. Gets the patient graph and plots it.  
@@ -83,6 +82,10 @@ python step2/main_freq_subgraph_plotter.py '../data/results/gspan_output.txt'
     Generates a list of the most common patterns for all the patients. 
 
 - Find a way to codify the patterns in order to use them as features.     
+- Add to the graphs the edge weight as the number of repeated edges over the selected two vertex.
+- Find a chronotripsis criteria. 
+- Make some histograms of the weights of the vertex depending on the max_distance given. (done)
+- Study the concept of chromotripsis and find a way to relate it with the max distance. 
 
 #### Notas:
 . Take care of overfitting. 

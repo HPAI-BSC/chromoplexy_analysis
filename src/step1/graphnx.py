@@ -84,10 +84,10 @@ def printGraph(graph, name=None, visualize=True, show_vertex_weights=False):
 	if name:
 		import os
 		try:
-			os.mkdir('../data/plots')
+			os.mkdir('../../data/plots')
 		except:
 			pass
-		plt.savefig('../data/plots/' + name + '.png')
+		plt.savefig('../../data/plots/' + name + '.png')
 	return plt
 
 # UNTESTED METHOD

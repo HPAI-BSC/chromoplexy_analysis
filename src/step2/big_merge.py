@@ -36,10 +36,12 @@ try:
 except:
     pass
 
+
 class Data(object):
     """
     This is the data i'll use to generate the features.
     """
+
     def __init__(self):
         """
         Atributes:
@@ -50,17 +52,17 @@ class Data(object):
                 :key id:int the global graph id.
                 :value support:int The support of the subgraph correspondent to this id.
         """
-        self.all_subgraphs=dict()
-        self.all_supports=dict()
+        self.all_subgraphs = dict()
+        self.all_supports = dict()
 
-    def get_graph_id(self,target_graph):
+    def get_graph_id(self, target_graph):
         try:
             id = self.all_subgraphs.keys()[self.all_subgraphs.values().index(target_graph)]
         except:
             id = len(self.all_subgraphs.keys())
         return id
 
-    def add_subgraph(self,subgraph,support):
+    def add_subgraph(self, subgraph, support):
         id = self.get_graph_id(subgraph)
         try:
             self.all_subgraphs[id] = subgraph
@@ -82,10 +84,17 @@ def generate_subgraphs(gspan_file_name, l=3, s=1, plot=False):
     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
     gs = gspanmain(FLAGS)
+    supports = gs._report_df['support']
+    i = 0
+    graph_support = {}
+    for support in supports:
+        print i, support
+        graph_support[i] = support
+        i +=1
     if plot:
         for g in gs.graphs.values():
             g.plot()
-    return gs
+    return gs, graph_support
 
 
 def process_patient(patient_id, plot_graph=False, max_distance=1000):
@@ -97,28 +106,27 @@ def process_patient(patient_id, plot_graph=False, max_distance=1000):
     subgraphs = generate_subgraphs(patient_id, plot=False)
     supports = []
     # TODO: find a way to get the supports
-    print('display')
-    for graph in subgraphs.graphs:
-        subgraphs.graphs[graph].display()
-    print('end')
+    print subgraphs.graphs
     # for id, graph in subgraphs.graphs.items():
     #     print id , graph
     # print(subgraphs)
-    return subgraphs,supports
+    return subgraphs, supports
 
-def process_list_of_patients(patients,max_distance=1000):
+
+def process_list_of_patients(patients, max_distance=1000):
     data = Data()
     for patient in patients:
-        subgraphs = process_patient(patient,max_distance)
+        subgraphs = process_patient(patient, max_distance)
         # for subgraph in subgraphs.graphs:
         #     print subgraph, subgraphs._get_support(subgraphs.graphs)
-            # data.add_subgraph(subgraphs[subgraph],subgraphs.support)
+        # data.add_subgraph(subgraphs[subgraph],subgraphs.support)
     data.print_all()
+
 
 def main():
     test_0 = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
     test_1 = '0a9c9db0-c623-11e3-bf01-24c6515278c0.vcf.tsv'
-    process_list_of_patients([test_0,test_1])
+    process_list_of_patients([test_0, test_1])
 
 
 if __name__ == '__main__':

@@ -1,4 +1,22 @@
 """
+Goal Dataset:
+patient_id | subgraph0 | subgraph1 | ... | subgraphN | metadata | type of cancer (target)
+
+To construct this I need:
+subgraphID (0) patients that contain it [patientid0 patientid1 patientidK] Total support of graph0
+subgraphID (1) patients that contain it [patientid0 patientid1 patientidK] Total support of graph0
+int               array(string)                                              (int)
+
+Subgraph_instance:
+    id: int
+    patients: array(strings)
+    support: int
+
+Data:
+    array(Graph)
+
+Generate all data -> order it by support -> select a subset of this graphs -> generate dataset.
+
 For every patient:
         1. Gets the patient graph and plots it.
         2. Gets the all the subgraph patterns of this graph.
@@ -6,8 +24,11 @@ For every patient:
             (dict\[sub_graph\] = number of sub_graphs of this type)
         4. Add to the general list the new subgraphs.
     Generates a list of the most common patterns for all the patients.
-TODO: find a way to save the graph support
 [1] https://github.com/betterenvi/gSpan
+TODO: ask Dario what should I do with the incongruent data:
+    The gspan code returns two different sets of subgraphs if you call the repport (gs._repport_df) or if you load de
+    subgraphs from the class. (gs.graphs)
+    The first one is the only one that is congruent with the logs, so for now I'm using it.
 """
 
 import os
@@ -27,6 +48,7 @@ from gspan_mining.main import main as gspanmain
 
 from datetime import timedelta
 import time
+import numpy as np
 
 DATAPATH = '../../data'
 PATIENT_PATH = DATAPATH + '/one_patient_test'
@@ -37,64 +59,69 @@ except:
     pass
 
 
+class Subgraph_instance(object):
+    """
+    This is the class that saves the subgraph data.
+    .
+    """
+    def __init__(self):
+        """
+        Atributes:
+            id: int
+            content: string  ('v 0 1 v 2 8 e 0 2 ')
+            patients: array(strings)
+            support: int
+        """
+        self.id = 0
+        self.content = ''
+        self.patients = np.array([])
+        self.support = 0
+
+    def add_patients(self, new_patients):
+        self.patients = np.append(self.patients, new_patients)
+
+    def add_support(self, new_support):
+        self.support += new_support
+
+
 class Data(object):
     """
     This is the data i'll use to generate the features.
     """
-
     def __init__(self):
         """
         Atributes:
-            all_subgraphs: dict[int] = gspan_graph. Dictionary of all the subgraphs.
-                :key id:int the global graph id.
-                :value subgraph: gspan_graph the subgraph in gspan format.
-            all_supports: dict[int] = gspan_graph. Dictionary of all the supports.
-                :key id:int the global graph id.
-                :value support:int The support of the subgraph correspondent to this id.
+            all_subgraphs: array(Graph_instance)
+            existing_subgraphs = key: content value: id 
         """
-        self.all_subgraphs = dict()
-        self.all_supports = dict()
+        self.all_subgraphs = []
+        self.existing_subgraphs = {}
 
-    def get_graph_id(self, target_graph):
-        try:
-            id = self.all_subgraphs.keys()[self.all_subgraphs.values().index(target_graph)]
-        except:
-            id = len(self.all_subgraphs.keys())
-        return id
-
-    def add_subgraph(self, subgraph, support):
-        id = self.get_graph_id(subgraph)
-        try:
-            self.all_subgraphs[id] = subgraph
-        except:
-            pass
-        try:
-            self.all_supports[id] += support
-        except:
-            self.all_supports[id] = support
-
-    def print_all(self):
-        for id in self.all_subgraphs.keys():
-            print id, self.all_supports[id]
-            self.all_subgraphs[id].display()
+    def add_subgraph(self, new_graph):
+        """
+        I add the new graph to the dataset or actualize it if the graph is already there.
+        :param new_graph: Graph_instance
+        :return:
+        """
+        if new_graph.content in self.existing_subgraphs.keys():
+            # if I alredy have this graph I actualize the data (adding the patients and the support to this graph)
+            id = self.existing_subgraphs[new_graph]
+            self.all_subgraphs[id].add_patients(new_graph.patients)
+            self.all_subgraphs[id].add_support(new_graph.support)
+        else:
+            # if I don't have the graph I give it an id and I add it to the dataset
+            id = len(self.existing_subgraphs)
+            new_graph.id = id
+            self.all_subgraphs.append(new_graph)
+            self.existing_subgraphs[new_graph.content] = new_graph.id
 
 
 def generate_subgraphs(gspan_file_name, l=3, s=1, plot=False):
     filepath = DATAPATH + '/allfiles_gspan_format/' + gspan_file_name + '.txt'
-    args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + filepath
+    args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + '-p ' + str(plot) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
     gs = gspanmain(FLAGS)
-    supports = gs._report_df['support']
-    i = 0
-    graph_support = {}
-    for support in supports:
-        print i, support
-        graph_support[i] = support
-        i +=1
-    if plot:
-        for g in gs.graphs.values():
-            g.plot()
-    return gs, graph_support
+    return gs._report_df
 
 
 def process_patient(patient_id, plot_graph=False, max_distance=1000):
@@ -104,13 +131,8 @@ def process_patient(patient_id, plot_graph=False, max_distance=1000):
                                with_edge_weight=False)
     print 'subgraphs of this patient'
     subgraphs = generate_subgraphs(patient_id, plot=False)
-    supports = []
-    # TODO: find a way to get the supports
-    print subgraphs.graphs
-    # for id, graph in subgraphs.graphs.items():
-    #     print id , graph
-    # print(subgraphs)
-    return subgraphs, supports
+    subgraphs.to_csv(patient_id +'.csv')
+    return subgraphs
 
 
 def process_list_of_patients(patients, max_distance=1000):
@@ -126,7 +148,7 @@ def process_list_of_patients(patients, max_distance=1000):
 def main():
     test_0 = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
     test_1 = '0a9c9db0-c623-11e3-bf01-24c6515278c0.vcf.tsv'
-    process_list_of_patients([test_0, test_1])
+    process_list_of_patients([test_1,test_0])
 
 
 if __name__ == '__main__':

@@ -64,16 +64,16 @@ class Subgraph_instance(object):
     This is the class that saves the subgraph data.
     .
     """
-    def __init__(self):
+    def __init__(self, description=''):
         """
         Atributes:
             id: int
-            content: string  ('v 0 1 v 2 8 e 0 2 ')
-            patients: array(strings)
+            description: string  ('v 0 1 v 2 8 e 0 2 ')
+            patients: array(string)
             support: int
         """
         self.id = 0
-        self.content = ''
+        self.description = description
         self.patients = np.array([])
         self.support = 0
 
@@ -82,6 +82,13 @@ class Subgraph_instance(object):
 
     def add_support(self, new_support):
         self.support += new_support
+
+    def print_subgraph(self):
+        print 'subgraph report: '
+        print 'id: ', self.id
+        print 'description: ', self.description
+        print 'support: ', self.support
+        print 'patients: ', self.patients
 
 
 class Data(object):
@@ -92,7 +99,7 @@ class Data(object):
         """
         Atributes:
             all_subgraphs: array(Graph_instance)
-            existing_subgraphs = key: content value: id 
+            existing_subgraphs = key: description value: id 
         """
         self.all_subgraphs = []
         self.existing_subgraphs = {}
@@ -103,9 +110,10 @@ class Data(object):
         :param new_graph: Graph_instance
         :return:
         """
-        if new_graph.content in self.existing_subgraphs.keys():
+        if new_graph.description in self.existing_subgraphs.keys():
             # if I alredy have this graph I actualize the data (adding the patients and the support to this graph)
-            id = self.existing_subgraphs[new_graph]
+            print 'YAYAYAYAYAYAY'
+            id = self.existing_subgraphs[new_graph.description]
             self.all_subgraphs[id].add_patients(new_graph.patients)
             self.all_subgraphs[id].add_support(new_graph.support)
         else:
@@ -113,7 +121,13 @@ class Data(object):
             id = len(self.existing_subgraphs)
             new_graph.id = id
             self.all_subgraphs.append(new_graph)
-            self.existing_subgraphs[new_graph.content] = new_graph.id
+            self.existing_subgraphs[new_graph.description] = new_graph.id
+
+    def print_all(self):
+        print 'Report of data:'
+        print 'number of subgraphs', len(self.all_subgraphs)
+        for graph in self.all_subgraphs:
+            graph.print_subgraph()
 
 
 def generate_subgraphs(gspan_file_name, l=3, s=1, plot=False):
@@ -124,14 +138,22 @@ def generate_subgraphs(gspan_file_name, l=3, s=1, plot=False):
     return gs._report_df
 
 
-def process_patient(patient_id, plot_graph=False, max_distance=1000):
+def process_patient(patient_id, max_distance=1000, plot_graph=False,):
     if plot_graph:
         plot_one_file(patient_id)
     generate_one_patient_graph(patient_id, max_distance, with_vertex_weight=False, with_vertex_chromosome=True,
                                with_edge_weight=False)
     print 'subgraphs of this patient'
-    subgraphs = generate_subgraphs(patient_id, plot=False)
-    subgraphs.to_csv(patient_id +'.csv')
+    report = generate_subgraphs(patient_id, plot=False)
+    subgraphs = []
+    for i in report.index:
+        graph_description = report['description'][i]
+        graph_support = report['support'][i]
+        subgraph = Subgraph_instance(graph_description)
+        subgraph.add_patients([patient_id])
+        subgraph.add_support(graph_support)
+        subgraph.print_subgraph()
+        subgraphs.append(subgraph)
     return subgraphs
 
 
@@ -139,9 +161,8 @@ def process_list_of_patients(patients, max_distance=1000):
     data = Data()
     for patient in patients:
         subgraphs = process_patient(patient, max_distance)
-        # for subgraph in subgraphs.graphs:
-        #     print subgraph, subgraphs._get_support(subgraphs.graphs)
-        # data.add_subgraph(subgraphs[subgraph],subgraphs.support)
+        for graph in subgraphs:
+            data.add_subgraph(graph)
     data.print_all()
 
 

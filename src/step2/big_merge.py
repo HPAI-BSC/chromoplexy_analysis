@@ -112,7 +112,6 @@ class Data(object):
         """
         if new_graph.description in self.existing_subgraphs.keys():
             # if I alredy have this graph I actualize the data (adding the patients and the support to this graph)
-            print 'YAYAYAYAYAYAY'
             id = self.existing_subgraphs[new_graph.description]
             self.all_subgraphs[id].add_patients(new_graph.patients)
             self.all_subgraphs[id].add_support(new_graph.support)

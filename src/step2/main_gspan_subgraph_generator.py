@@ -61,7 +61,7 @@ def generate_all_patient_graphs(max_distance):
                 f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' 2\n')
 
 
-def generate_one_patient_graph(filename, max_distance, with_vertex_weight=False, with_vertex_chromosome=False,
+def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspan_format/', with_vertex_weight=False, with_vertex_chromosome=False,
                                with_edge_weight=False):
     subgraphs = []
     # Directory containing the files
@@ -80,17 +80,16 @@ def generate_one_patient_graph(filename, max_distance, with_vertex_weight=False,
     candidates = list(nx.connected_component_subgraphs(g))
     for c in candidates:
         if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:
-            print count, filename
             subgraphs.append(c)
             count += 1
 
     # store
     try:
-        os.mkdir(DATAPATH + '/allfiles_gspan_format')
+        os.mkdir(DATAPATH + gspan_path)
     except:
         pass
 
-    with open(DATAPATH + '/allfiles_gspan_format/' + filename + '.txt', 'w') as f:
+    with open(DATAPATH + gspan_path + filename + '.txt', 'w') as f:
         counter = 0
         for g in subgraphs:
             f.write('t # ' + str(counter) + '\n')
@@ -105,7 +104,6 @@ def generate_one_patient_graph(filename, max_distance, with_vertex_weight=False,
                     weight = 2
                 f.write('v ' + str(v) + ' ' + str(weight) + '\n')
             # Iterate over all edges
-            print g.edges
             for edge in g.edges():
                 if with_edge_weight:
                     weight = g.edges[edge]['weight']

@@ -24,11 +24,17 @@ For every patient:
             (dict\[sub_graph\] = number of sub_graphs of this type)
         4. Add to the general list the new subgraphs.
     Generates a list of the most common patterns for all the patients.
+
 [1] https://github.com/betterenvi/gSpan
-TODO: ask Dario what should I do with the incongruent data:
+
+TODO:
+    - Ask Dario what should I do with the incongruent data:
     The gspan code returns two different sets of subgraphs if you call the repport (gs._repport_df) or if you load de
     subgraphs from the class. (gs.graphs)
     The first one is the only one that is congruent with the logs, so for now I'm using it.
+    - Paralelise the code for generating the dataset ( if possible)
+    - Decide if use min support 1 or min support 2
+        If i use support 1 it generates a non reasonable number of subgraphs, for now i'm testing using min support per patient 2
 """
 
 import os
@@ -42,21 +48,17 @@ from step1.graphnx import generateNXGraph
 from step1.main_graph_printer import plot_one_file
 from step2.main_gspan_subgraph_generator import generate_one_patient_graph
 
-import networkx as nx
 from gspan_mining.config import parser
 from gspan_mining.main import main as gspanmain
 
 from datetime import timedelta
 import time
 import numpy as np
+import pickle
 
 DATAPATH = '../../data'
-PATIENT_PATH = DATAPATH + '/one_patient_test'
 
-try:
-    os.mkdir(DATAPATH + '/one_patient_test')
-except:
-    pass
+GSPAN_DATA_FOLDER = '/all_files_gspan_1000/'
 
 
 class Subgraph_instance(object):
@@ -64,6 +66,7 @@ class Subgraph_instance(object):
     This is the class that saves the subgraph data.
     .
     """
+
     def __init__(self, description=''):
         """
         Atributes:
@@ -84,7 +87,6 @@ class Subgraph_instance(object):
         self.support += new_support
 
     def print_subgraph(self):
-        print 'subgraph report: '
         print 'id: ', self.id
         print 'description: ', self.description
         print 'support: ', self.support
@@ -95,6 +97,7 @@ class Data(object):
     """
     This is the data i'll use to generate the features.
     """
+
     def __init__(self):
         """
         Atributes:
@@ -122,28 +125,56 @@ class Data(object):
             self.all_subgraphs.append(new_graph)
             self.existing_subgraphs[new_graph.description] = new_graph.id
 
+    def sort_by_support(self):
+        import operator
+        sorted_x = sorted(self.existing_subgraphs, key=operator.attrgetter('support'))
+        return sorted_x
+
     def print_all(self):
         print 'Report of data:'
         print 'number of subgraphs', len(self.all_subgraphs)
-        for graph in self.all_subgraphs:
+        for graph in self.all_subgraphs[:10]:
             graph.print_subgraph()
 
+    def print_most_common(self):
+        print 'number of subgraphs', len(self.all_subgraphs)
+        for graph in self.sort_by_support()[:50]:
+            graph.print_subgraph()
 
-def generate_subgraphs(gspan_file_name, l=3, s=1, plot=False):
-    filepath = DATAPATH + '/allfiles_gspan_format/' + gspan_file_name + '.txt'
+    @staticmethod
+    def save_to_file(filepath, dataobject):
+        fileObject = open(filepath, 'wb')
+        pickle.dump(dataobject, fileObject)
+
+    @staticmethod
+    def load_from_file(filepath):
+        fileObject = open(filepath, 'rb')
+        dataobject = pickle.load(fileObject)
+        return dataobject
+
+
+def generate_subgraphs(gspan_file_name, l=3, s=2, plot=False):
+    filepath = DATAPATH + GSPAN_DATA_FOLDER + gspan_file_name + '.txt'
     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + '-p ' + str(plot) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
     gs = gspanmain(FLAGS)
     return gs._report_df
 
 
-def process_patient(patient_id, max_distance=1000, plot_graph=False,):
+def process_patient(patient_id, max_distance=1000, plot_graph=False, ):
     if plot_graph:
         plot_one_file(patient_id)
-    generate_one_patient_graph(patient_id, max_distance, with_vertex_weight=False, with_vertex_chromosome=True,
-                               with_edge_weight=False)
+
     print 'subgraphs of this patient'
-    report = generate_subgraphs(patient_id, plot=False)
+    try:
+        report = generate_subgraphs(patient_id, plot=False)
+    except:
+        print 'except'
+        generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
+                                   with_vertex_chromosome=False,
+                                   with_edge_weight=False)
+        report = generate_subgraphs(patient_id, plot=False)
+
     subgraphs = []
     for i in report.index:
         graph_description = report['description'][i]
@@ -151,24 +182,37 @@ def process_patient(patient_id, max_distance=1000, plot_graph=False,):
         subgraph = Subgraph_instance(graph_description)
         subgraph.add_patients([patient_id])
         subgraph.add_support(graph_support)
-        subgraph.print_subgraph()
         subgraphs.append(subgraph)
     return subgraphs
 
 
 def process_list_of_patients(patients, max_distance=1000):
     data = Data()
+    print 'number of patients: ', len(patients)
+    f = open('processsed.txt', 'w')
     for patient in patients:
+        f.write(patient)
+        f.write('\n')
         subgraphs = process_patient(patient, max_distance)
         for graph in subgraphs:
             data.add_subgraph(graph)
+
     data.print_all()
 
 
-def main():
+def test():
     test_0 = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
     test_1 = '0a9c9db0-c623-11e3-bf01-24c6515278c0.vcf.tsv'
-    process_list_of_patients([test_1,test_0])
+    conflictive = 'b8f3137e-5e92-4a56-90d4-884a4ed2ef9c.vcf.tsv'
+    all_patients = [conflictive]
+    process_list_of_patients(all_patients)
+
+
+def main():
+    # Directory containing the files
+    data_path = DATAPATH + '/allfiles'
+    all_patients = os.listdir(data_path)
+    process_list_of_patients(all_patients)
 
 
 if __name__ == '__main__':

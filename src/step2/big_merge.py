@@ -34,7 +34,8 @@ TODO:
     The first one is the only one that is congruent with the logs, so for now I'm using it.
     - Paralelise the code for generating the dataset ( if possible)
     - Decide if use min support 1 or min support 2
-        If i use support 1 it generates a non reasonable number of subgraphs, for now i'm testing using min support per patient 2
+        If i use support 1 it generates a non reasonable number of subgraphs,
+        for now i'm testing using min support per patient 2
 """
 
 import os
@@ -60,6 +61,10 @@ DATAPATH = '../../data'
 
 GSPAN_DATA_FOLDER = '/all_files_gspan_1000/'
 
+try:
+    os.mkdir(DATAPATH + GSPAN_DATA_FOLDER)
+except:
+    pass
 
 class Subgraph_instance(object):
     """
@@ -136,9 +141,9 @@ class Data(object):
         for graph in self.all_subgraphs[:10]:
             graph.print_subgraph()
 
-    def print_most_common(self):
+    def print_most_common(self, number_of_graphs):
         print 'number of subgraphs', len(self.all_subgraphs)
-        for graph in self.sort_by_support()[:50]:
+        for graph in self.sort_by_support()[:number_of_graphs]:
             graph.print_subgraph()
 
     @staticmethod
@@ -190,12 +195,16 @@ def process_list_of_patients(patients, max_distance=1000):
     data = Data()
     print 'number of patients: ', len(patients)
     f = open('processsed.txt', 'w')
+    i = 0
     for patient in patients:
-        f.write(patient)
+        f.write(str(i) + ' ' + patient)
         f.write('\n')
         subgraphs = process_patient(patient, max_distance)
+        f.write('subgraphs: ' + str(len(subgraphs)))
+        f.write('\n')
         for graph in subgraphs:
             data.add_subgraph(graph)
+        i += 1
 
     data.print_all()
 

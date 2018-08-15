@@ -43,6 +43,12 @@ import sys
 
 sys.path.insert(1, '../../src')
 
+import warnings
+warnings.simplefilter('ignore')
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+
+
 from step1.loader import load_breaks
 from step1.graph_builder import generateGraph
 from step1.graphnx import generateNXGraph
@@ -57,14 +63,18 @@ import time
 import numpy as np
 import pickle
 
+
 DATAPATH = '../../data'
 
-GSPAN_DATA_FOLDER = '/all_files_gspan_1000/'
+MAX_DISTANCE = 2000
+
+GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
 
 try:
     os.mkdir(DATAPATH + GSPAN_DATA_FOLDER)
 except:
     pass
+
 
 class Subgraph_instance(object):
     """
@@ -207,13 +217,15 @@ def process_list_of_patients(patients, max_distance=1000):
         i += 1
 
     data.print_all()
+    Data().save_to_file('data_50_1_' + str(max_distance) + '.pkl',data)
 
 
 def test():
     test_0 = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
     test_1 = '0a9c9db0-c623-11e3-bf01-24c6515278c0.vcf.tsv'
     conflictive = 'b8f3137e-5e92-4a56-90d4-884a4ed2ef9c.vcf.tsv'
-    all_patients = [conflictive]
+    conf = 'd60f880a-c622-11e3-bf01-24c6515278c0.vcf.tsv'
+    all_patients = [conf]
     process_list_of_patients(all_patients)
 
 

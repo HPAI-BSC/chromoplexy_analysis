@@ -2,9 +2,10 @@
 TODO:
     find a good strategy for imputing missing data,
         for now i'm ussing the most frequent value
-
+    If the classes doesen't work I can merge ECTODERM and NEURAL_CREST
 """
 import warnings
+
 warnings.simplefilter('ignore')
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
@@ -15,10 +16,10 @@ from matplotlib import pyplot as plt
 import sys
 import time
 from datetime import timedelta
-
-
-
+from collections import Counter, OrderedDict
+import os
 import seaborn as sns
+
 sns.set()
 
 from sklearn.preprocessing import Imputer
@@ -35,7 +36,7 @@ def generate_csv():
     """
     data = pd.DataFrame(
         columns=['sampleID', 'donor_sex', 'donor_age_at_diagnosis', 'histology_tier1', 'histology_tier2',
-                 'tumor_stage1','tumor_stage2'])
+                 'tumor_stage1', 'tumor_stage2'])
 
     with open(DATAPATH) as f:
         for l in f:
@@ -47,13 +48,13 @@ def generate_csv():
             tier2 = words[4]
             tumor_stage1 = '_'.join(words[5:7])
             tumor_stage2 = '_'.join(words[8:])
-            data = data.append({'sampleID':id, 'donor_sex':sex, 'donor_age_at_diagnosis':age,
-                                'histology_tier1':tier1, 'histology_tier2':tier2,
-                 'tumor_stage1':tumor_stage1,'tumor_stage2':tumor_stage2},ignore_index=True)
+            data = data.append({'sampleID': id, 'donor_sex': sex, 'donor_age_at_diagnosis': age,
+                                'histology_tier1': tier1, 'histology_tier2': tier2,
+                                'tumor_stage1': tumor_stage1, 'tumor_stage2': tumor_stage2}, ignore_index=True)
 
     data = data.drop(data.index[0])
 
-    data.to_csv('../../data/metadatos_v2.0.csv',index=False)
+    data.to_csv('../../data/metadatos_v2.0.csv', index=False)
 
 
 def preprocessing(df):
@@ -72,9 +73,9 @@ def preprocessing(df):
     df['donor_age_at_diagnosis'] = df['donor_age_at_diagnosis'].astype(np.int)
 
     # Drop tumor stage 1, it's very unbalanced
-    df = df.drop('tumor_stage1',axis=1)
+    df = df.drop('tumor_stage1', axis=1)
     # Drop tumor stage 2, it's very unbalanced + useless
-    df = df.drop('tumor_stage2',axis=1)
+    df = df.drop('tumor_stage2', axis=1)
 
     return df
 
@@ -92,30 +93,38 @@ def describe(df):
     print 'Crosstab between histology tier1 and histology tier2: '
     print pd.crosstab(df.histology_tier1, df.histology_tier2)
     for col in df.columns:
+        # don't print sample ID
         if col == 'sampleID':
             continue
-        plt.figure()
+
+        plt.figure(figsize=(20, 10))
+
         values = df[col].values
         if col == 'donor_age_at_diagnosis':
             lower, higher = df['donor_age_at_diagnosis'].min(), df['donor_age_at_diagnosis'].max()
             n_bins = 20
             edges = range(lower, higher, (higher - lower) / n_bins)  # the number of edges is 8
             lbs = ['(%d, %d]' % (edges[i], edges[i + 1]) for i in range(len(edges) - 2)]
-            print(len(lbs), n_bins)
-            values = pd.cut(df.donor_age_at_diagnosis, bins=n_bins+1, labels=lbs, include_lowest=True)
+            values = pd.cut(df.donor_age_at_diagnosis, bins=n_bins + 1, labels=lbs, include_lowest=True)
 
-
-        from collections import Counter
         d = Counter(values)
         factor = 1.0 / sum(d.itervalues())
         D = {k: v * factor for k, v in d.iteritems()}
-        # todo
-        for k, v in  sorted(D.iteritems(), key=lambda (k, v): (v, k)):
-            D[k] = v
+
+        if col == 'donor_age_at_diagnosis':
+            D = OrderedDict(
+                (k, v) for k, v in sorted(D.iteritems(), key=lambda (k, v): (int(k[1:-1].split(',')[0]), v)))
+
         plt.bar(range(len(D)), list(D.values()))
         plt.xticks(range(len(D)), list(D.keys()), rotation=30)
         plt.title(col)
-        plt.show()
+        plot_path = '../../data/plots/data_analysis/'
+        try:
+            os.mkdir(plot_path)
+        except:
+            pass
+
+        plt.savefig(plot_path + 'barplot_' + col)
 
 
 def main():

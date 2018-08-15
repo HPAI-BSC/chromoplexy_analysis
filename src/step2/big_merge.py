@@ -58,6 +58,8 @@ from step2.main_gspan_subgraph_generator import generate_one_patient_graph
 from gspan_mining.config import parser
 from gspan_mining.main import main as gspanmain
 
+from gspan_mining.gspan import  gSpan
+
 from datetime import timedelta
 import time
 import numpy as np
@@ -172,8 +174,22 @@ def generate_subgraphs(gspan_file_name, l=3, s=2, plot=False):
     filepath = DATAPATH + GSPAN_DATA_FOLDER + gspan_file_name + '.txt'
     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + '-p ' + str(plot) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
-    gs = gspanmain(FLAGS)
-    return gs._report_df
+    gs = gSpan(
+        database_file_name=FLAGS.database_file_name,
+        min_support=FLAGS.min_support,
+        min_num_vertices=FLAGS.lower_bound_of_num_vertices,
+        max_num_vertices=FLAGS.upper_bound_of_num_vertices,
+        max_ngraphs=FLAGS.num_graphs,
+        is_undirected=(not FLAGS.directed),
+        verbose=FLAGS.verbose,
+        visualize=FLAGS.plot,
+        where=FLAGS.where
+    )
+
+    gs.run()
+    report = gs._report_df
+    gs = None
+    return report
 
 
 def process_patient(patient_id, max_distance=1000, plot_graph=False, ):
@@ -184,7 +200,6 @@ def process_patient(patient_id, max_distance=1000, plot_graph=False, ):
     try:
         report = generate_subgraphs(patient_id, plot=False)
     except:
-        print 'except'
         generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
                                    with_vertex_chromosome=False,
                                    with_edge_weight=False)

@@ -4,6 +4,10 @@ TODO:
         for now i'm ussing the most frequent value
 
 """
+import warnings
+warnings.simplefilter('ignore')
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 import numpy as np
 import pandas as pd
@@ -12,11 +16,12 @@ import sys
 import time
 from datetime import timedelta
 
-import warnings
-warnings.simplefilter('ignore')
+
 
 import seaborn as sns
 sns.set()
+
+from sklearn.preprocessing import Imputer
 
 sys.path.insert(1, '../../src')
 
@@ -24,6 +29,10 @@ DATAPATH = '../../data/metadatos_v2.0.txt'
 
 
 def generate_csv():
+    """
+    This function generates a real dataset using the txt given and saves it as a csv.
+    :return:
+    """
     data = pd.DataFrame(
         columns=['sampleID', 'donor_sex', 'donor_age_at_diagnosis', 'histology_tier1', 'histology_tier2',
                  'tumor_stage1','tumor_stage2'])
@@ -46,43 +55,73 @@ def generate_csv():
 
     data.to_csv('../../data/metadatos_v2.0.csv',index=False)
 
-def nan_processing(df):
-    data_with_na = df[df.isnull().any(axis=1)]
-    print df['histology_tier1'].value_counts()
-    print data_with_na['histology_tier1'].value_counts()
-    print df['histology_tier2'].value_counts()
-    print data_with_na['histology_tier2'].value_counts()
-    print df['histology_tier1'].value_counts()
-    print data_with_na['histology_tier1'].value_counts()
-    print df['histology_tier2'].value_counts()
-    print data_with_na['histology_tier2'].value_counts()
-    print df['tumor_stage1'].value_counts()
-    print data_with_na['tumor_stage1'].value_counts()
-    print df['tumor_stage2'].value_counts()
-    print data_with_na['tumor_stage2'].value_counts()
+
+def preprocessing(df):
+    """
+    Courrent strategy for nans: replace with the most_frequent
+    TODO: replace with the most common age per cancer type.
+
+    Droped tumor_stage1 and tumor_stage2
+    :param df:
+    :return:
+    """
+    # Imput missing data with the most frequent
+    imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
+    imp.fit(df['donor_age_at_diagnosis'].values.reshape(-1, 1))
+    df['donor_age_at_diagnosis'] = imp.fit_transform(df[['donor_age_at_diagnosis']]).ravel()
+    df['donor_age_at_diagnosis'] = df['donor_age_at_diagnosis'].astype(np.int)
+
+    # Drop tumor stage 1, it's very unbalanced
+    df = df.drop('tumor_stage1',axis=1)
+    # Drop tumor stage 2, it's very unbalanced + useless
+    df = df.drop('tumor_stage2',axis=1)
+
+    return df
 
 
 def describe(df):
+    """
+    This function prints a report of the metadata and the representative plots
+    :param df:
+    :return:
+    """
+    print 'Dataset:'
     print df.head()
+    print 'Shape:'
     print df.shape
-    # print df.describe(include=['float64', 'object'])
-    print('age nans',     df.isnull().sum())
-    df['donor_age_at_diagnosis'].hist(bins=50)
-
-    # needs testing
+    print 'Crosstab between histology tier1 and histology tier2: '
+    print pd.crosstab(df.histology_tier1, df.histology_tier2)
     for col in df.columns:
-        print df[col].value_counts()
-        if col ==
+        if col == 'sampleID':
+            continue
         plt.figure()
-        sns.countplot(x=col,data=df)
-        plt.show()
+        values = df[col].values
+        if col == 'donor_age_at_diagnosis':
+            lower, higher = df['donor_age_at_diagnosis'].min(), df['donor_age_at_diagnosis'].max()
+            n_bins = 20
+            edges = range(lower, higher, (higher - lower) / n_bins)  # the number of edges is 8
+            lbs = ['(%d, %d]' % (edges[i], edges[i + 1]) for i in range(len(edges) - 2)]
+            print(len(lbs), n_bins)
+            values = pd.cut(df.donor_age_at_diagnosis, bins=n_bins+1, labels=lbs, include_lowest=True)
 
+
+        from collections import Counter
+        d = Counter(values)
+        factor = 1.0 / sum(d.itervalues())
+        D = {k: v * factor for k, v in d.iteritems()}
+        # todo
+        for k, v in  sorted(D.iteritems(), key=lambda (k, v): (v, k)):
+            D[k] = v
+        plt.bar(range(len(D)), list(D.values()))
+        plt.xticks(range(len(D)), list(D.keys()), rotation=30)
+        plt.title(col)
+        plt.show()
 
 
 def main():
     # generate_csv()
     data = pd.read_csv('../../data/metadatos_v2.0.csv')
-    # nan_processing(data)
+    data = preprocessing(data)
     describe(data)
 
 

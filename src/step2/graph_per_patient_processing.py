@@ -59,7 +59,7 @@ from step2.main_gspan_subgraph_generator import generate_one_patient_graph
 from gspan_mining.config import parser
 from gspan_mining.main import main as gspanmain
 
-from gspan_mining.gspan import  gSpan
+from gspan_mining.gspan import gSpan
 
 from datetime import timedelta
 import time
@@ -69,7 +69,7 @@ import pickle
 
 # This variables are global to simplify testing the code, will be removed later:
 
-NUMBER_OF_SAMPLES = -1
+NUMBER_OF_SAMPLES = 100
 
 MIN_SUPPORT = 1
 
@@ -126,6 +126,29 @@ class Subgraph_instance(object):
         print 'patients: ', self.patients
 
 
+class Patient_instance(object):
+    """
+        This is the class that saves the subgraph data.
+        .
+        """
+
+    def __init__(self, id):
+        """
+        Atributes:
+            id: string
+            graphs: dict(description(string):support(int))
+        """
+        self.id = id
+        self.graphs = {}
+
+    def add_graph(self, new_graph_description, new_graph_support):
+        self.graphs[new_graph_description] = new_graph_support
+
+    def print_patient(self):
+        print 'id: ', self.id
+        print 'graphs: ', self.graphs
+
+
 class Data(object):
     """
     This is the data i'll use to generate the features.
@@ -136,11 +159,11 @@ class Data(object):
         Atributes:
             all_subgraphs: array(Graph_instance)
             existing_subgraphs = key: description value: id
-            all_patients = array(string)
+            patients = array(Patient_Instance)
         """
         self.all_subgraphs = []
         self.existing_subgraphs = {}
-        self.all_patients = []
+        self.patients = []
 
     def add_subgraph(self, new_graph):
         """
@@ -160,16 +183,20 @@ class Data(object):
             self.all_subgraphs.append(new_graph)
             self.existing_subgraphs[new_graph.description] = new_graph.id
 
-    def add_patient(self, patient):
-        self.all_patients.append(patient)
+    def add_patient(self, newPatient):
+        self.patients.append(newPatient)
 
     def sort_by_support(self):
         import operator
         self.all_subgraphs.sort(key=operator.attrgetter('support'),reverse=True)
+        # for i in range(len(self.all_subgraphs)):
+        #     self.all_subgraphs[i].id = i
+        #     self.existing_subgraphs[self.all_subgraphs[i].description] = i
 
     def print_all(self):
         print 'Report of data:'
         print 'number of subgraphs', len(self.all_subgraphs)
+        print 'number of patients', len(self.patients)
         for graph in self.all_subgraphs[:10]:
             graph.print_subgraph()
 
@@ -213,6 +240,14 @@ def generate_subgraphs(gspan_file_name, l=3, s=2, plot=False):
 
 
 def process_patient(patient_id, max_distance=1000, min_support=2, plot_graph=False):
+    """
+    This function generates an array of subgraphs instances using the report returned by gspan
+    :param patient_id:
+    :param max_distance:
+    :param min_support:
+    :param plot_graph:
+    :return:
+    """
     if plot_graph:
         plot_one_file(patient_id)
 
@@ -225,15 +260,20 @@ def process_patient(patient_id, max_distance=1000, min_support=2, plot_graph=Fal
                                    with_edge_weight=False)
         report = generate_subgraphs(patient_id,s=min_support, plot=False)
 
+    patient = Patient_instance(patient_id)
+
     subgraphs = []
     for i in report.index:
         graph_description = report['description'][i]
         graph_support = report['support'][i]
+
+        patient.add_graph(graph_description, graph_support)
+
         subgraph = Subgraph_instance(graph_description)
         subgraph.add_patients([patient_id])
         subgraph.add_support(graph_support)
         subgraphs.append(subgraph)
-    return subgraphs
+    return subgraphs, patient
 
 
 def process_list_of_patients(patients, max_distance=1000, min_support=2):
@@ -241,11 +281,11 @@ def process_list_of_patients(patients, max_distance=1000, min_support=2):
     print 'number of patients: ', len(patients)
     f = open(PROCESSED_PATH, 'w')
     i = 0
-    for patient in patients:
-        data.add_patient(patient)
-        f.write(str(i) + ' ' + patient)
+    for patient_id in patients:
+        f.write(str(i) + ' ' + patient_id)
         f.write('\n')
-        subgraphs = process_patient(patient, max_distance, min_support=min_support)
+        subgraphs, patient_instance = process_patient(patient_id, max_distance, min_support=min_support)
+        data.add_patient(patient_instance)
         f.write('subgraphs: ' + str(len(subgraphs)))
         f.write('\n')
         for graph in subgraphs:

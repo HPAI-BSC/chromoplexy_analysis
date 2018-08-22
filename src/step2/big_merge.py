@@ -36,6 +36,7 @@ TODO:
     - Decide if use min support 1 or min support 2
         If i use support 1 it generates a non reasonable number of subgraphs,
         for now i'm testing using min support per patient 2
+    - Standarizar el output.
 """
 
 import os
@@ -66,14 +67,29 @@ import numpy as np
 import pickle
 
 
-DATAPATH = '../../data'
+# This variables are global to simplify testing the code, will be removed later:
+
+NUMBER_OF_SAMPLES = -1
+
+MIN_SUPPORT = 1
 
 MAX_DISTANCE = 2000
 
+# Data paths:
+
+DATAPATH = '../../data'
+
 GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
+
+PROCESSED_PATH = DATAPATH + '/tests/processsed_' + str(NUMBER_OF_SAMPLES) + \
+                 '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '.txt'
 
 try:
     os.mkdir(DATAPATH + GSPAN_DATA_FOLDER)
+except:
+    pass
+try:
+    os.mkdir(DATAPATH + '/tests')
 except:
     pass
 
@@ -119,10 +135,12 @@ class Data(object):
         """
         Atributes:
             all_subgraphs: array(Graph_instance)
-            existing_subgraphs = key: description value: id 
+            existing_subgraphs = key: description value: id
+            all_patients = array(string)
         """
         self.all_subgraphs = []
         self.existing_subgraphs = {}
+        self.all_patients = []
 
     def add_subgraph(self, new_graph):
         """
@@ -142,10 +160,12 @@ class Data(object):
             self.all_subgraphs.append(new_graph)
             self.existing_subgraphs[new_graph.description] = new_graph.id
 
+    def add_patient(self, patient):
+        self.all_patients.append(patient)
+
     def sort_by_support(self):
         import operator
-        sorted_x = sorted(self.existing_subgraphs, key=operator.attrgetter('support'))
-        return sorted_x
+        self.all_subgraphs.sort(key=operator.attrgetter('support'),reverse=True)
 
     def print_all(self):
         print 'Report of data:'
@@ -192,7 +212,7 @@ def generate_subgraphs(gspan_file_name, l=3, s=2, plot=False):
     return report
 
 
-def process_patient(patient_id, max_distance=1000, plot_graph=False, ):
+def process_patient(patient_id, max_distance=1000, min_support=2, plot_graph=False):
     if plot_graph:
         plot_one_file(patient_id)
 
@@ -203,7 +223,7 @@ def process_patient(patient_id, max_distance=1000, plot_graph=False, ):
         generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
                                    with_vertex_chromosome=False,
                                    with_edge_weight=False)
-        report = generate_subgraphs(patient_id, plot=False)
+        report = generate_subgraphs(patient_id,s=min_support, plot=False)
 
     subgraphs = []
     for i in report.index:
@@ -216,15 +236,16 @@ def process_patient(patient_id, max_distance=1000, plot_graph=False, ):
     return subgraphs
 
 
-def process_list_of_patients(patients, max_distance=1000):
+def process_list_of_patients(patients, max_distance=1000, min_support=2):
     data = Data()
     print 'number of patients: ', len(patients)
-    f = open('processsed.txt', 'w')
+    f = open(PROCESSED_PATH, 'w')
     i = 0
     for patient in patients:
+        data.add_patient(patient)
         f.write(str(i) + ' ' + patient)
         f.write('\n')
-        subgraphs = process_patient(patient, max_distance)
+        subgraphs = process_patient(patient, max_distance, min_support=min_support)
         f.write('subgraphs: ' + str(len(subgraphs)))
         f.write('\n')
         for graph in subgraphs:
@@ -277,10 +298,8 @@ def test():
 
 
 def main():
-    # Directory containing the files
-    data_path = DATAPATH + '/allfiles'
-    all_patients = os.listdir(data_path)
-    process_list_of_patients(all_patients)
+    path = DATAPATH + '/tests/data_100_1_2000.pkl'
+    generate_dataset(path)
 
 
 if __name__ == '__main__':

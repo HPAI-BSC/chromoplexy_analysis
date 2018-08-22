@@ -77,6 +77,8 @@ def preprocessing(df):
     # Drop tumor stage 2, it's very unbalanced + useless
     df = df.drop('tumor_stage2', axis=1)
 
+    df.to_csv('../../data/clean_metadata.csv', index=False)
+
     return df
 
 

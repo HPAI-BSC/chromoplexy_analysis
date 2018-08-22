@@ -256,34 +256,6 @@ def process_list_of_patients(patients, max_distance=1000, min_support=2):
     Data().save_to_file(DATAPATH + '/tests' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(max_distance) + '.pkl', data)
 
 
-def generate_dataset(path):
-    """
-    This function generates a dataset using the subgraphs of the patients.
-    :param path:
-    :return:
-    """
-    data = Data().load_from_file(path)
-    data.sort_by_support()
-    data.print_all()
-
-    import pandas as pd
-
-    dataset_columns = ['graph_' + str(i) for i in range(len(data.all_subgraphs))]
-
-    graphs_dataset = pd.DataFrame()
-
-
-def generate_all_subgraphs():
-    """
-    This function generates all the subgraphs.
-    Todo: refactor all this part.
-    :return:
-    """
-    # Directory containing the files
-    data_path = DATAPATH + '/allfiles'
-    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
-    process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
-
 def test():
     """
     This is a dummy function for testing. Will be removed.
@@ -298,8 +270,10 @@ def test():
 
 
 def main():
-    path = DATAPATH + '/tests/data_100_1_2000.pkl'
-    generate_dataset(path)
+    # Directory containing the files
+    data_path = DATAPATH + '/allfiles'
+    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+    process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
 
 
 if __name__ == '__main__':

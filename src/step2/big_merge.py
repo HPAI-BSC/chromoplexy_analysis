@@ -232,10 +232,42 @@ def process_list_of_patients(patients, max_distance=1000):
         i += 1
 
     data.print_all()
-    Data().save_to_file('data_50_1_' + str(max_distance) + '.pkl',data)
+    Data().save_to_file(DATAPATH + '/tests' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(max_distance) + '.pkl', data)
 
+
+def generate_dataset(path):
+    """
+    This function generates a dataset using the subgraphs of the patients.
+    :param path:
+    :return:
+    """
+    data = Data().load_from_file(path)
+    data.sort_by_support()
+    data.print_all()
+
+    import pandas as pd
+
+    dataset_columns = ['graph_' + str(i) for i in range(len(data.all_subgraphs))]
+
+    graphs_dataset = pd.DataFrame()
+
+
+def generate_all_subgraphs():
+    """
+    This function generates all the subgraphs.
+    Todo: refactor all this part.
+    :return:
+    """
+    # Directory containing the files
+    data_path = DATAPATH + '/allfiles'
+    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+    process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
 
 def test():
+    """
+    This is a dummy function for testing. Will be removed.
+    :return:
+    """
     test_0 = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
     test_1 = '0a9c9db0-c623-11e3-bf01-24c6515278c0.vcf.tsv'
     conflictive = 'b8f3137e-5e92-4a56-90d4-884a4ed2ef9c.vcf.tsv'

@@ -138,7 +138,7 @@ class Patient_instance(object):
             id: string
             graphs: dict(description(string):support(int))
         """
-        self.id = id
+        self.id = id.replace('.vcf.tsv','')
         self.graphs = {}
 
     def add_graph(self, new_graph_description, new_graph_support):
@@ -217,7 +217,7 @@ class Data(object):
         return dataobject
 
 
-def generate_subgraphs(gspan_file_name, l=3, s=2, plot=False):
+def generate_subgraphs(gspan_file_name, s, l=3, plot=False):
     filepath = DATAPATH + GSPAN_DATA_FOLDER + gspan_file_name + '.txt'
     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + '-p ' + str(plot) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
@@ -239,7 +239,7 @@ def generate_subgraphs(gspan_file_name, l=3, s=2, plot=False):
     return report
 
 
-def process_patient(patient_id, max_distance=1000, min_support=2, plot_graph=False):
+def process_patient(patient_id, max_distance, min_support, plot_graph=False):
     """
     This function generates an array of subgraphs instances using the report returned by gspan
     :param patient_id:
@@ -251,7 +251,7 @@ def process_patient(patient_id, max_distance=1000, min_support=2, plot_graph=Fal
     if plot_graph:
         plot_one_file(patient_id)
 
-    print 'subgraphs of this patient'
+    print 'subgraphs of patient', patient_id
     try:
         report = generate_subgraphs(patient_id, plot=False)
     except:
@@ -276,7 +276,7 @@ def process_patient(patient_id, max_distance=1000, min_support=2, plot_graph=Fal
     return subgraphs, patient
 
 
-def process_list_of_patients(patients, max_distance=1000, min_support=2):
+def process_list_of_patients(patients, max_distance, min_support):
     data = Data()
     print 'number of patients: ', len(patients)
     f = open(PROCESSED_PATH, 'w')

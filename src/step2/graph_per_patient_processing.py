@@ -51,15 +51,11 @@ warnings.simplefilter('ignore')
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
-from step1.loader import load_breaks
-from step1.graph_builder import generateGraph
-from step1.graphnx import generateNXGraph
+
 from step1.main_graph_printer import plot_one_file
 from step2.main_gspan_subgraph_generator import generate_one_patient_graph
 
 from gspan_mining.config import parser
-from gspan_mining.main import main as gspanmain
-
 from gspan_mining.gspan import gSpan
 
 from datetime import timedelta
@@ -75,7 +71,7 @@ NUMBER_OF_SAMPLES = -1
 
 MIN_SUPPORT = 0.8
 
-MAX_DISTANCE = 2000
+MAX_DISTANCE = 1500
 
 REPLACE = True
 
@@ -126,7 +122,7 @@ class Subgraph_instance(object):
         print 'id: ', self.id
         print 'description: ', self.description
         print 'support: ', self.support
-        print 'patients: ', self.patients
+        # print 'patients: ', self.patients
 
 
 class Patient_instance(object):
@@ -200,13 +196,23 @@ class Data(object):
         print 'Report of data:'
         print 'number of subgraphs', len(self.all_subgraphs)
         print 'number of patients', len(self.patients)
-        for graph in self.all_subgraphs[:10]:
+        for graph in self.all_subgraphs[:1000]:
             graph.print_subgraph()
 
     def print_most_common(self, number_of_graphs):
         print 'number of subgraphs', len(self.all_subgraphs)
         for graph in self.sort_by_support()[:number_of_graphs]:
             graph.print_subgraph()
+
+    def purge_less_common_subgraphs(self,min):
+        self.all_subgraphs = [graph for graph in self.all_subgraphs if graph.support > min]
+        to_mantain = [graph.description for graph in self.all_subgraphs]
+        for i in range(len(self.patients)):
+            new = {key:val for key, val in self.patients[i].graphs.items() if key in to_mantain}
+            self.patients[i].graphs = None
+            self.patients[i].graphs = new
+
+
 
     @staticmethod
     def save_to_file(filepath, dataobject):

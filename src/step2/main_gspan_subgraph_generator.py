@@ -75,8 +75,9 @@ def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspa
         return
     adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,
                                                                                    max_distance)
+    print(adjacency_matrix, vertex_labels)
     g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights, self_links=False,
-                        connected_only=True)
+                        connected_only=False)
     candidates = list(nx.connected_component_subgraphs(g))
     for c in candidates:
         if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:
@@ -91,25 +92,29 @@ def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspa
 
     with open(DATAPATH + gspan_path + filename + '.txt', 'w') as f:
         counter = 0
+        map_nodes = {}
         for g in subgraphs:
             f.write('t # ' + str(counter) + '\n')
             counter += 1
             # Iterate over vertices
+            count = 0
             for v in g.nodes():
+                map_nodes[v] = count
                 if with_vertex_weight:
                     weight = g.nodes[v]['weights']
                 elif with_vertex_chromosome:
                     weight = g.nodes[v]['chromosome']
                 else:
                     weight = 2
-                f.write('v ' + str(v) + ' ' + str(weight) + '\n')
+                f.write('v ' + str(map_nodes[v]) + ' ' + str(weight) + '\n')
+                count += 1
             # Iterate over all edges
             for edge in g.edges():
                 if with_edge_weight:
                     weight = g.edges[edge]['weight']
                 else:
                     weight = 2
-                f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' ' + str(weight) + '\n')
+                f.write('e ' + str(map_nodes[edge[0]]) + ' ' + str(map_nodes[edge[1]]) + ' ' + str(weight) + '\n')
 
 
 def main():

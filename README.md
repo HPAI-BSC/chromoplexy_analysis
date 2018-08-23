@@ -25,7 +25,7 @@ In this step we generate a graph per patient, in order to simplify the study.
 - loader
 - graph_builder
 - graphnx
-- main_graph_printer
+- main\_graph_printer
 
 ### Step 2: Graph analysis
 
@@ -79,10 +79,10 @@ python step2/main_freq_subgraph_plotter.py '../data/results/gspan_output.txt'
         3. Generates the sample in terms of subgraphs of this patient. 
             (dict\[sub_graph\] = number of sub_graphs of this type)
         4. Add to the general list the new subgraphs. 
-    Generates a list of the most common patterns for all the patients. 
+    Generates a list of the most common patterns for all the patients. (done)
 
-- Find a way to codify the patterns in order to use them as features.     
-- Add to the graphs the edge weight as the number of repeated edges over the selected two vertex.
+- Find a way to codify the patterns in order to use them as features.(done)
+- Add to the graphs the edge weight as the number of repeated edges over the selected two vertex.(done)
 - Find a chronotripsis criteria. 
 - Make some histograms of the weights of the vertex depending on the max_distance given. (done)
 - Study the concept of chromotripsis and find a way to relate it with the max distance. 

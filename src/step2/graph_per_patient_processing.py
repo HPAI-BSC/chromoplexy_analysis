@@ -40,15 +40,16 @@ TODO:
 """
 
 import os
+import subprocess
 import sys
 
 sys.path.insert(1, '../../src')
 
 import warnings
+
 warnings.simplefilter('ignore')
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
-
 
 from step1.loader import load_breaks
 from step1.graph_builder import generateGraph
@@ -65,11 +66,12 @@ from datetime import timedelta
 import time
 import numpy as np
 import pickle
-
+import pandas as pd
+import shlex
 
 # This variables are global to simplify testing the code, will be removed later:
 
-NUMBER_OF_SAMPLES = 5
+NUMBER_OF_SAMPLES = 2
 
 MIN_SUPPORT = 1
 
@@ -140,7 +142,7 @@ class Patient_instance(object):
             id: string
             graphs: dict(description(string):support(int))
         """
-        self.id = id.replace('.vcf.tsv','')
+        self.id = id.replace('.vcf.tsv', '')
         self.graphs = {}
 
     def add_graph(self, new_graph_description, new_graph_support):
@@ -190,7 +192,7 @@ class Data(object):
 
     def sort_by_support(self):
         import operator
-        self.all_subgraphs.sort(key=operator.attrgetter('support'),reverse=True)
+        self.all_subgraphs.sort(key=operator.attrgetter('support'), reverse=True)
         # for i in range(len(self.all_subgraphs)):
         #     self.all_subgraphs[i].id = i
         #     self.existing_subgraphs[self.all_subgraphs[i].description] = i
@@ -219,7 +221,7 @@ class Data(object):
         return dataobject
 
 
-def generate_subgraphs(gspan_file_name, s, l=3, plot=False):
+def old_generate_subgraphs(gspan_file_name, s, l=3, plot=False):
     filepath = DATAPATH + GSPAN_DATA_FOLDER + gspan_file_name + '.txt'
     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + '-p ' + str(plot) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
@@ -241,6 +243,69 @@ def generate_subgraphs(gspan_file_name, s, l=3, plot=False):
     return report
 
 
+def load_report(path, cores):
+    """
+    The report is contained on a set of files, one per core used to mine the graphs.
+    Every file contains subgraphs with the next extructure:
+
+    t # 0 * 2
+    v 0 2
+    v 1 2
+    e 0 1 2
+    x: 0 1
+    :param path:
+    :param cores:
+    :return:
+    """
+    report = pd.DataFrame(columns=['description', 'support'])
+    index = 0
+    support = 0
+    description = ''
+    for core in range(cores):
+        f = open(path + '.t' + str(core),'r')
+        for l in f:
+            # Skip empty lines
+            if l == '\n':
+                continue
+            # If its a new graph. Store the current one and initialize the next
+            if l[0] == 't':
+                # Obtain the support of this graph
+                support = int(l.split()[-1])
+                description = ''
+                # Initialize next graph
+                first_edge = True
+            # Its a new vertex. Add it.
+            if l[0] == 'v':
+                description += l.replace('\n',' ')
+            # Its a new edge. Add it.
+            if l[0] == 'e':
+                description += l.replace('\n',' ')
+            # Its the graph support. Store it.
+            # If the graph is finished sum one to the index
+            if l[0] == 'x':
+                report.loc[index] = [description, support]
+                index += 1
+    report.to_csv('isitworking.csv')
+    return report
+
+
+def generate_subgraphs(gspan_file_name, s):
+    filepath = DATAPATH + GSPAN_DATA_FOLDER + gspan_file_name + '.txt'
+    outputpath = DATAPATH + '/patients_gspan_graphs/'
+    try:
+        os.mkdir(outputpath)
+    except:
+        pass
+    outputfile = DATAPATH + '/patients_gspan_graphs/' + gspan_file_name
+
+    command = shlex.split("/home/raquel/Documents/DataMining-gSpan/build/gbolt -input_file " + filepath +
+                          " -pattern 1 -support " + str(s) + " -output_file " + outputfile)
+    print(command)
+    p = subprocess.Popen(command)
+    report = load_report(outputfile, 8)
+    return report
+
+
 def process_patient(patient_id, max_distance, min_support, plot_graph=False):
     """
     This function generates an array of subgraphs instances using the report returned by gspan
@@ -255,13 +320,13 @@ def process_patient(patient_id, max_distance, min_support, plot_graph=False):
 
     print 'subgraphs of patient', patient_id
     try:
-        report = generate_subgraphs(patient_id, plot=False)
+        report = generate_subgraphs(patient_id, s=min_support)
     except:
         if REPLACE:
             generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
-                                   with_vertex_chromosome=False,
-                                   with_edge_weight=False)
-        report = generate_subgraphs(patient_id,s=min_support, plot=False)
+                                       with_vertex_chromosome=False,
+                                       with_edge_weight=False)
+        report = generate_subgraphs(patient_id, s=min_support)
 
     patient = Patient_instance(patient_id)
 
@@ -296,7 +361,9 @@ def process_list_of_patients(patients, max_distance, min_support):
         i += 1
 
     data.print_all()
-    Data().save_to_file(DATAPATH + '/tests' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(max_distance) + '.pkl', data)
+    Data().save_to_file(
+        DATAPATH + '/tests' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(max_distance) + '.pkl',
+        data)
 
 
 def test():

@@ -69,11 +69,13 @@ import pickle
 
 # This variables are global to simplify testing the code, will be removed later:
 
-NUMBER_OF_SAMPLES = 100
+NUMBER_OF_SAMPLES = 5
 
 MIN_SUPPORT = 1
 
 MAX_DISTANCE = 2000
+
+REPLACE = True
 
 # Data paths:
 
@@ -255,7 +257,8 @@ def process_patient(patient_id, max_distance, min_support, plot_graph=False):
     try:
         report = generate_subgraphs(patient_id, plot=False)
     except:
-        generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
+        if REPLACE:
+            generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
                                    with_vertex_chromosome=False,
                                    with_edge_weight=False)
         report = generate_subgraphs(patient_id,s=min_support, plot=False)

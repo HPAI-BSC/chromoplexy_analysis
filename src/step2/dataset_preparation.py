@@ -37,6 +37,9 @@ def generate_dataset(path):
 
     data = Data().load_from_file(path)
     data.sort_by_support()
+    print(len(data.all_subgraphs))
+    data.purge_less_common_subgraphs(20)
+    print(len(data.all_subgraphs))
 
     patients_id = [p.id for p in data.patients]
     selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
@@ -45,17 +48,23 @@ def generate_dataset(path):
 
     graphs_dataset = pd.DataFrame(columns=all_columns)
     graphs_dataset = pd.concat([graphs_dataset, selected_patients_metadata])
+    # Put 0 in all the columns of this patient
     graphs_dataset.loc[:, graph_columns] = 0
-
+    i = 0
     for patient in data.patients:
-        # Put 0 in all the columns of this patient
-        for graph_description in patient.graphs.keys():
-            id = data.existing_subgraphs[graph_description]
-            column = 'graph_' + str(id)
-            # Put the support of the graph corresponding to this patient
-            graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
+        if patient.id in metadata.index:
+            if i %100 ==0:
+                print i
+            for graph_description in patient.graphs.keys():
+                id = data.existing_subgraphs[graph_description]
+                column = 'graph_' + str(id)
+                # Put the support of the graph corresponding to this patient
+                graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
+            i +=1
+        else:
+            print(patient.id)
 
-    print(graphs_dataset.head)
+    # print(graphs_dataset.head)
     graphs_dataset.to_csv(DATAPATH + '/classification_2601_0.8_2000.csv')
 
 

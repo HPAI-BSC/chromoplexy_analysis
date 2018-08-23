@@ -71,9 +71,9 @@ import shlex
 
 # This variables are global to simplify testing the code, will be removed later:
 
-NUMBER_OF_SAMPLES = 2
+NUMBER_OF_SAMPLES = -1
 
-MIN_SUPPORT = 1
+MIN_SUPPORT = 0.8
 
 MAX_DISTANCE = 2000
 
@@ -96,7 +96,6 @@ try:
     os.mkdir(DATAPATH + '/tests')
 except:
     pass
-
 
 class Subgraph_instance(object):
     """
@@ -262,30 +261,36 @@ def load_report(path, cores):
     support = 0
     description = ''
     for core in range(cores):
-        f = open(path + '.t' + str(core),'r')
-        for l in f:
-            # Skip empty lines
-            if l == '\n':
-                continue
-            # If its a new graph. Store the current one and initialize the next
-            if l[0] == 't':
-                # Obtain the support of this graph
-                support = int(l.split()[-1])
-                description = ''
-                # Initialize next graph
-                first_edge = True
-            # Its a new vertex. Add it.
-            if l[0] == 'v':
-                description += l.replace('\n',' ')
-            # Its a new edge. Add it.
-            if l[0] == 'e':
-                description += l.replace('\n',' ')
-            # Its the graph support. Store it.
-            # If the graph is finished sum one to the index
-            if l[0] == 'x':
-                report.loc[index] = [description, support]
-                index += 1
-    report.to_csv('isitworking.csv')
+        try:
+            f = open(path + '.t' + str(core), 'r')
+            for l in f:
+                # Skip empty lines
+                if l == '\n':
+                    continue
+                # If its a new graph. Store the current one and initialize the next
+                if l[0] == 't':
+                    # Obtain the support of this graph
+                    support = int(l.split()[-1])
+                    description = ''
+                    # Initialize next graph
+                    first_edge = True
+                # Its a new vertex. Add it.
+                if l[0] == 'v':
+                    description += l.replace('\n', ' ')
+                # Its a new edge. Add it.
+                if l[0] == 'e':
+                    description += l.replace('\n', ' ')
+                # Its the graph support. Store it.
+                # If the graph is finished sum one to the index
+                if l[0] == 'x':
+                    report.loc[index] = [description, support]
+                    index += 1
+            # When done with this file i remove it from disk
+            os.remove(path + '.t' + str(core))
+        except:
+            broken_patients = open('logs/broken.txt','w')
+            broken_patients.write(path)
+    # report.to_csv('isitworking.csv')
     return report
 
 
@@ -299,9 +304,10 @@ def generate_subgraphs(gspan_file_name, s):
     outputfile = DATAPATH + '/patients_gspan_graphs/' + gspan_file_name
 
     command = shlex.split("/home/raquel/Documents/DataMining-gSpan/build/gbolt -input_file " + filepath +
-                          " -pattern 1 -support " + str(s) + " -output_file " + outputfile)
-    print(command)
-    p = subprocess.Popen(command)
+                          " -pattern 1 -support " + str(
+        s) + " -output_file " + outputfile)
+    # I want no output from gspan
+    p = subprocess.call(command,stderr=open(os.devnull, 'wb'))
     report = load_report(outputfile, 8)
     return report
 
@@ -318,14 +324,16 @@ def process_patient(patient_id, max_distance, min_support, plot_graph=False):
     if plot_graph:
         plot_one_file(patient_id)
 
-    print 'subgraphs of patient', patient_id
-    try:
+    print 'patient:', patient_id
+
+    # Todo: reuse the data
+
+    if os.path.isfile(DATAPATH + GSPAN_DATA_FOLDER + patient_id + '.txt'):
         report = generate_subgraphs(patient_id, s=min_support)
-    except:
-        if REPLACE:
-            generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
-                                       with_vertex_chromosome=False,
-                                       with_edge_weight=False)
+    else:
+        generate_one_patient_graph(patient_id, max_distance, gspan_path=GSPAN_DATA_FOLDER, with_vertex_weight=False,
+                                   with_vertex_chromosome=False,
+                                   with_edge_weight=False)
         report = generate_subgraphs(patient_id, s=min_support)
 
     patient = Patient_instance(patient_id)

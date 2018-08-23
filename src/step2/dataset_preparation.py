@@ -56,11 +56,11 @@ def generate_dataset(path):
             graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
 
     print(graphs_dataset.head)
-    graphs_dataset.to_csv(DATAPATH + '/classification_dataset.csv')
+    graphs_dataset.to_csv(DATAPATH + '/classification_100_0.8_2000.csv')
 
 
 def main():
-    path = DATAPATH + '/tests/data_100_1_2000.pkl'
+    path = DATAPATH + '/tests/data_100_0.8_2000.pkl'
     generate_dataset(path)
 
 

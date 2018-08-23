@@ -75,9 +75,8 @@ def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspa
         return
     adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,
                                                                                    max_distance)
-    print(adjacency_matrix, vertex_labels)
     g = generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights, self_links=False,
-                        connected_only=False)
+                        connected_only=True)
     candidates = list(nx.connected_component_subgraphs(g))
     for c in candidates:
         if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:

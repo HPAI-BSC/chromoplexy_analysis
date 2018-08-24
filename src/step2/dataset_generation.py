@@ -67,7 +67,7 @@ import shlex
 
 # This variables are global to simplify testing the code, will be removed later:
 
-NUMBER_OF_SAMPLES = -1
+NUMBER_OF_SAMPLES = 5
 
 MIN_SUPPORT = 0.8
 
@@ -92,6 +92,7 @@ try:
     os.mkdir(DATAPATH + '/tests')
 except:
     pass
+
 
 class Subgraph_instance(object):
     """
@@ -196,7 +197,7 @@ class Data(object):
         print 'Report of data:'
         print 'number of subgraphs', len(self.all_subgraphs)
         print 'number of patients', len(self.patients)
-        for graph in self.all_subgraphs[:1000]:
+        for graph in self.all_subgraphs[:5]:
             graph.print_subgraph()
 
     def print_most_common(self, number_of_graphs):
@@ -365,6 +366,7 @@ def process_list_of_patients(patients, max_distance, min_support):
     i = 0
     for patient_id in patients:
         f.write(str(i) + ' ' + patient_id)
+        print(str(i) + ' ' + patient_id)
         f.write('\n')
         subgraphs, patient_instance = process_patient(patient_id, max_distance, min_support=min_support)
         data.add_patient(patient_instance)
@@ -375,29 +377,61 @@ def process_list_of_patients(patients, max_distance, min_support):
         i += 1
 
     data.print_all()
-    Data().save_to_file(
-        DATAPATH + '/tests' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(max_distance) + '.pkl',
-        data)
+
+    file_path = DATAPATH + '/tests' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(max_distance) + '.pkl'
+    Data().save_to_file(file_path, data)
+
+    return file_path
 
 
-def test():
+def generate_dataset(path, name='classification_csv'):
     """
-    This is a dummy function for testing. Will be removed.
+    This function generates a dataset using the subgraphs of the patients and the metadata.
+    :param path:
     :return:
     """
-    test_0 = 'e84e0649-a2e8-4873-9cb6-1aa65601ae3a.vcf.tsv'
-    test_1 = '0a9c9db0-c623-11e3-bf01-24c6515278c0.vcf.tsv'
-    conflictive = 'b8f3137e-5e92-4a56-90d4-884a4ed2ef9c.vcf.tsv'
-    conf = 'd60f880a-c622-11e3-bf01-24c6515278c0.vcf.tsv'
-    all_patients = [conf]
-    process_list_of_patients(all_patients)
+
+    metadata = pd.read_csv('../../data/clean_metadata.csv')
+    metadata = metadata.set_index('sampleID')
+
+    data = Data().load_from_file(path)
+    data.sort_by_support()
+    data.purge_less_common_subgraphs(20)
+
+    patients_id = [p.id for p in data.patients]
+    selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
+    graph_columns = ['graph_' + str(graph.id) for graph in data.all_subgraphs]
+    all_columns = np.append(metadata.columns, graph_columns).flatten()
+
+    graphs_dataset = pd.DataFrame(columns=all_columns)
+    graphs_dataset = pd.concat([graphs_dataset, selected_patients_metadata])
+    # Put 0 in all the columns of this patient
+    graphs_dataset.loc[:, graph_columns] = 0
+    i = 0
+    for patient in data.patients:
+        if patient.id in metadata.index:
+            if i %100 ==0:
+                print i
+            for graph_description in patient.graphs.keys():
+                id = data.existing_subgraphs[graph_description]
+                column = 'graph_' + str(id)
+                # Put the support of the graph corresponding to this patient
+                graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
+            i +=1
+        else:
+            print(patient.id)
+
+    # print(graphs_dataset.head)
+    graphs_dataset.to_csv(DATAPATH + '/' + name)
 
 
 def main():
     # Directory containing the files
     data_path = DATAPATH + '/allfiles'
     all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
-    process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
+    file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
+    name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE)
+    generate_dataset(file_path, name)
 
 
 if __name__ == '__main__':

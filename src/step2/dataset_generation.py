@@ -67,7 +67,7 @@ import shlex
 
 # This variables are global to simplify testing the code, will be removed later:
 
-NUMBER_OF_SAMPLES = 5
+NUMBER_OF_SAMPLES = -1
 
 MIN_SUPPORT = 0.8
 
@@ -396,7 +396,7 @@ def generate_dataset(path, name='classification_csv'):
 
     data = Data().load_from_file(path)
     data.sort_by_support()
-    data.purge_less_common_subgraphs(20)
+    data.purge_less_common_subgraphs(5)
 
     patients_id = [p.id for p in data.patients]
     selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
@@ -410,8 +410,8 @@ def generate_dataset(path, name='classification_csv'):
     i = 0
     for patient in data.patients:
         if patient.id in metadata.index:
-            if i %100 ==0:
-                print i
+            # if i %100 ==0:
+            #     print i
             for graph_description in patient.graphs.keys():
                 id = data.existing_subgraphs[graph_description]
                 column = 'graph_' + str(id)
@@ -421,7 +421,39 @@ def generate_dataset(path, name='classification_csv'):
         else:
             print(patient.id)
 
-    # print(graphs_dataset.head)
+    # I'll try to add chromosome relative information.
+    chromosomes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22, 'X', 'Y']
+    graphs_dataset['number_of_breaks'] = 0
+
+    svclass = ['DUP', 'DEL', 'TRA', 'h2hINV','t2tINV']
+
+    for chrom in chromosomes:
+        graphs_dataset['chr_' + str(chrom)] = 0
+
+    for cls in svclass:
+        graphs_dataset[cls] = 0
+
+    for patient in graphs_dataset.index:
+        print(patient)
+        patient_path = DATAPATH + '/allfiles/' + patient + '.vcf.tsv'
+        patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t',index_col=None)
+        # print(patient_breaks.columns, patient_breaks.shape)
+
+        number_of_breaks = len(patient_breaks)
+        graphs_dataset.loc[patient,'number_of_breaks'] = number_of_breaks
+
+        contained_chromosomes = patient_breaks[['#chrom1','chrom2']].apply(pd.Series.value_counts)
+        contained_chromosomes = contained_chromosomes.fillna(0)
+        contained_chromosomes[['#chrom1','chrom2']] = contained_chromosomes[['#chrom1','chrom2']].astype(int)
+        contained_chromosomes['chromosome'] = contained_chromosomes.index
+        contained_chromosomes['count'] = contained_chromosomes['#chrom1'] + contained_chromosomes['chrom2']
+        for chrom in contained_chromosomes.index:
+            graphs_dataset.loc[patient,['chr_' + str(chrom)]] = contained_chromosomes.loc[chrom,['count']].values[0]
+
+        count_svclass = patient_breaks[['svclass',]].apply(pd.Series.value_counts)
+        for svclass in count_svclass.index:
+            graphs_dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
+
     graphs_dataset.to_csv(DATAPATH + '/' + name)
 
 
@@ -429,8 +461,11 @@ def main():
     # Directory containing the files
     data_path = DATAPATH + '/allfiles'
     all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
-    file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
+    # file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT)
+    filename = '2601_0.8_2000'
+    file_path = DATAPATH + '/tests' + '/data_'+filename+'.pkl'
     name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE)
+    name = 'classification_dataset_' + filename + '.csv'
     generate_dataset(file_path, name)
 
 

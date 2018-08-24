@@ -52,6 +52,7 @@ def compare_classifiers(X_train,y_train,X_test,y_test):
 
 
 def main():
+    # path = DATAPATH + '/classification_dataset_1000_0.8_1500.csv'
     path = DATAPATH + '/classification_2601_0.8_2000.csv'
     df = pd.read_csv(path)
     y = df.pop('histology_tier1')

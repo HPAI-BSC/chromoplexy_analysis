@@ -2,12 +2,13 @@
 
 This code generates a csv with the next dataset information:
 
-Goal Dataset:
+**Goal Dataset:**
+
 patient_id | subgraph0 | subgraph1 | ... | subgraphN | metadata | type of cancer (target)
 
 To construct this I use the next classes:
 
-Subgraph_instance:
+**Subgraph_instance:**
 
 	id: int
 
@@ -17,13 +18,14 @@ Subgraph_instance:
 
 	support: int (This variable is the global support of the graph, i.e. respect all the patients)
 
-Patient instance:
+**Patient instance:**
 
 	id: string
 
 	graphs: dict(description(string):support(int)) (This attribute is the local support of the graph, i.e. respect this specific patient)
 
-Data:
+**Data:**
+
 	all_subgraphs: array(Graph_instance)
 
 	existing_subgraphs = key: description value: id

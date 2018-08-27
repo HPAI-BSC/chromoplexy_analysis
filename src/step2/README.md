@@ -8,18 +8,26 @@ patient_id | subgraph0 | subgraph1 | ... | subgraphN | metadata | type of cancer
 To construct this I use the next classes:
 
 Subgraph_instance:
+
 	id: int
+
 	description: string ('v 0 1 v 2 8 e 0 2 ')
+
 	patients: array(strings)
+
 	support: int (This variable is the global support of the graph, i.e. respect all the patients)
 
 Patient instance:
+
 	id: string
+
 	graphs: dict(description(string):support(int)) (This attribute is the local support of the graph, i.e. respect this specific patient)
 
 Data:
 	all_subgraphs: array(Graph_instance)
+
 	existing_subgraphs = key: description value: id
+
 	patients = array(Patient_Instance)
 
 General working flow: 

@@ -187,32 +187,6 @@ class Data(object):
         dataobject = pickle.load(fileObject)
         return dataobject
 
-
-# This code uses the first gspan implementation, now we are using the C++ paralelized implementation
-# of gspan
-
-# def old_generate_subgraphs(gspan_file_name, s, l=3, plot=False):
-#     filepath = DATAPATH + GSPAN_DATA_FOLDER + gspan_file_name + '.txt'
-#     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' ' + '-p ' + str(plot) + ' ' + filepath
-#     FLAGS, _ = parser.parse_known_args(args=args_str.split())
-#     gs = gSpan(
-#         database_file_name=FLAGS.database_file_name,
-#         min_support=FLAGS.min_support,
-#         min_num_vertices=FLAGS.lower_bound_of_num_vertices,
-#         max_num_vertices=FLAGS.upper_bound_of_num_vertices,
-#         max_ngraphs=FLAGS.num_graphs,
-#         is_undirected=(not FLAGS.directed),
-#         verbose=FLAGS.verbose,
-#         visualize=FLAGS.plot,
-#         where=FLAGS.where
-#     )
-#
-#     gs.run()
-#     report = gs._report_df
-#     gs = None
-#     return report
-
-
 def load_report(path, cores):
     """
     The report is contained on a set of files, one per core used to mine the graphs.
@@ -326,7 +300,7 @@ def process_list_of_patients(patients, max_distance, min_support, data_path, gsp
     i = 0
     for patient_id in patients:
         f.write(str(i) + ' ' + patient_id)
-        print(str(i) + ' ' + patient_id)
+        # print(str(i) + ' ' + patient_id)
         f.write('\n')
         subgraphs, patient_instance = process_patient(patient_id, max_distance, min_support=min_support,
                                                       data_path=data_path, gspan_data_folder=gspan_data_folder)
@@ -337,7 +311,7 @@ def process_list_of_patients(patients, max_distance, min_support, data_path, gsp
             data.add_subgraph(graph)
         i += 1
 
-    data.print_all()
+    # data.print_all()
 
     file_path = data_path + '/raw_processed_data' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(
         max_distance) + '.pkl'
@@ -424,41 +398,53 @@ def generate_dataset(path, data_path, name='classification_csv'):
 
 
 def main():
-    # This variables are global to simplify testing the code, will be removed later:
-    NUMBER_OF_SAMPLES = 5
 
-    MIN_SUPPORT = 0.8
+    # This variables are global to simplify testing the code, will be removed later:
+    NUMBER_OF_SAMPLES = -1
 
     MAX_DISTANCE = 2000
 
-    # Data paths:
-    DATAPATH = '../../data'
+    supports = [1, 0.9, 0.7, 0.6]
 
-    GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
+    time_per_support = {}
+    for support in supports:
+        init = time.time()
 
-    PROCESSED_PATH = DATAPATH + '/raw_processed_data/processsed_' + str(NUMBER_OF_SAMPLES) + \
-                     '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '.txt'
+        MIN_SUPPORT = support
+        # Data paths:
+        DATAPATH = '../../data'
 
-    try:
-        os.mkdir(DATAPATH + GSPAN_DATA_FOLDER)
-    except:
-        pass
-    try:
-        os.mkdir(DATAPATH + '/raw_processed_data')
-    except:
-        pass
+        GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
 
-    # Directory containing the files
-    data_path = DATAPATH + '/raw_original_data/allfiles'
-    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
-    file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
-                                         data_path=DATAPATH, processed_path=PROCESSED_PATH,
-                                         gspan_data_folder=GSPAN_DATA_FOLDER)
-    name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE)
-    generate_dataset(path=file_path, data_path=DATAPATH, name=name)
+        PROCESSED_PATH = DATAPATH + '/raw_processed_data/processsed_' + str(NUMBER_OF_SAMPLES) + \
+                         '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '.txt'
 
+        try:
+            os.mkdir(DATAPATH + GSPAN_DATA_FOLDER)
+        except:
+            pass
+        try:
+            os.mkdir(DATAPATH + '/raw_processed_data')
+        except:
+            pass
+
+        # Directory containing the files
+        data_path = DATAPATH + '/raw_original_data/allfiles'
+        all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+        print('Generating the raw data...')
+        file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
+                                             data_path=DATAPATH, processed_path=PROCESSED_PATH,
+                                             gspan_data_folder=GSPAN_DATA_FOLDER)
+        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE)
+        generate_dataset(path=file_path, data_path=DATAPATH, name=name)
+        end_time = timedelta(seconds=time.time() - init)
+        time_per_support[support] = end_time
+
+    for key in time_per_support.keys():
+        print 'support:', key
+        print 'time:',  time_per_support[key]
 
 if __name__ == '__main__':
     init = time.time()
     main()
-    print'time:', timedelta(seconds=time.time() - init)
+    print'Total time:', timedelta(seconds=time.time() - init)

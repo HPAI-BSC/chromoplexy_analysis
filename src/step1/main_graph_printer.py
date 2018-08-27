@@ -18,7 +18,7 @@ import re
 
 
 # Directory containing the files
-data_path = '../../data/allfiles'
+data_path = '../../data/raw_original_data/allfiles'
 
 
 def plot_all(max_distance):
@@ -63,7 +63,7 @@ def plot_vertex_weight_histogram(max_distance):
         breaks, list_of_pairs = load_breaks(os.path.join(data_path, file_name))
         if len(breaks) == 0:
             print 'WARNING: Empty data file', file_name
-            shutil.move(os.path.join(data_path, file_name), os.path.join('../../data/empty_files', file_name))
+            shutil.move(os.path.join(data_path, file_name), os.path.join('../../data/raw_original_data/empty_files', file_name))
             continue
         # Generate the vertices and edges
         adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,

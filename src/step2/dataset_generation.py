@@ -20,13 +20,13 @@ Data:
 Generate all data -> order it by global support -> select a subset of this graphs -> generate dataset.
 
 For every patient:
-        1. Gets the patient graph.
-        2. Gets the all the subgraph patterns of this graph.
-        3. Generates the sample in terms of subgraphs of this patient.
+        1. Generate the patient graph.
+        2. Generate all the subgraph patterns of this graph using gspan.
+        3. Generate the sample (in terms of subgraphs) of this patient.
             (dict\[sub_graph\] = number of sub_graphs of this type)
         4. Add to the general list the new subgraphs.
-    Generates a list of the most common patterns for all the patients.
-
+        5. Generates a list of the most common patterns for all the patients by removing the less common
+        6. Use this data to generate the final dataset and save it on a csv.
 The gspan implementation is taken from:
 [1] https://github.com/Jokeren/DataMining-gSpan
 
@@ -186,6 +186,7 @@ class Data(object):
         fileObject = open(filepath, 'rb')
         dataobject = pickle.load(fileObject)
         return dataobject
+
 
 def load_report(path, cores):
     """

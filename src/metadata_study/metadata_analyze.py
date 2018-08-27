@@ -54,7 +54,7 @@ def generate_csv():
 
     data = data.drop(data.index[0])
 
-    data.to_csv('../../data/metadatos_v2.0.csv', index=False)
+    data.to_csv('../../data/raw_original_data//metadatos_v2.0.csv', index=False)
 
 
 def preprocessing(df):
@@ -77,7 +77,7 @@ def preprocessing(df):
     # Drop tumor stage 2, it's very unbalanced + useless
     df = df.drop('tumor_stage2', axis=1)
 
-    df.to_csv('../../data/clean_metadata.csv', index=False)
+    df.to_csv('../../data/raw_original_data/clean_metadata.csv', index=False)
 
     return df
 

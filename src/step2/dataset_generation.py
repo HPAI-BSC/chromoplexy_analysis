@@ -344,6 +344,7 @@ def generate_dataset(path, data_path, name='classification_csv'):
     # Put 0 in all the columns of this patient
     graphs_dataset.loc[:, graph_columns] = 0
     i = 0
+    print 'Patients without metadata: '
     for patient in data.patients:
         if patient.id in metadata.index:
             # if i %100 ==0:
@@ -394,7 +395,7 @@ def generate_dataset(path, data_path, name='classification_csv'):
     except:
         os.mkdir(data_path + '/datasets/')
         graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
-    print('All done')
+    print('Csv generated')
 
 
 def main():

@@ -25,7 +25,7 @@ file2 = open('../results/'+str(clique_size)+'-cliques_location_per_patient_w'+st
 file3 = open('../results/'+str(clique_size)+'-cliques_ranges_per_patient_w'+str(max_distance)+'.csv','w')
 
 #Directory containing the files
-data_path = '../data/allfiles'
+data_path = '../data/raw_original_data/allfiles'
 #Iterate over the files
 for filename in os.listdir(data_path):
     #Load the brakes

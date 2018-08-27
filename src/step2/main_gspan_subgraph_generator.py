@@ -65,7 +65,7 @@ def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspa
                                with_edge_weight=False):
     subgraphs = []
     # Directory containing the files
-    data_path = DATAPATH + '/allfiles'
+    data_path = DATAPATH + '/raw_original_data/allfiles'
     # Iterate over the files
     count = 0
 

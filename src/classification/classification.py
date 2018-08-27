@@ -1,4 +1,5 @@
 import sys
+import os
 
 sys.path.insert(1, '../../src')
 
@@ -11,8 +12,6 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 from datetime import timedelta
 import time
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
@@ -88,7 +87,8 @@ def test_with_some_datasets(dataset_files):
 
 
 def main():
-    datasets = ['classification_dataset_2601_0.8_2000.csv', 'classification_dataset_2601_0.8_1500.csv']
+    # datasets = ['classification_dataset_2601_0.8_2000.csv', 'classification_dataset_2601_0.8_1500.csv']
+    datasets = os.listdir(DATAPATH + '/datasets/')
     test_with_some_datasets(datasets)
 
 

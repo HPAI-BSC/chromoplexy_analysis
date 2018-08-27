@@ -35,29 +35,16 @@ from scipy import stats
 DATAPATH = '../../data'
 
 
-def report(results, n_top=3):
-    for i in range(1, n_top + 1):
-        candidates = np.flatnonzero(results['rank_test_score'] == i)
-        for candidate in candidates:
-            print("Model with rank: {0}".format(i))
-            print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
-                results['mean_test_score'][candidate],
-                results['std_test_score'][candidate]))
-            print("Parameters: {0}".format(results['params'][candidate]))
-            print("")
-
 
 def compare_dummy_classifiers(X_train, y_train, X_test, y_test):
     names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-             "Decision Tree", "AdaBoost",
-             "Naive Bayes", "LDA"]
+             "Decision Tree", "Naive Bayes", "LDA"]
     classifiers = [
         KNeighborsClassifier(4),
         SVC(kernel="linear", C=0.025),
         SVC(gamma=2, C=1),
         GaussianProcessClassifier(1.0 * RBF(1.0)),
         DecisionTreeClassifier(max_depth=5),
-        AdaBoostClassifier(),
         GaussianNB(),
         LinearDiscriminantAnalysis()]
 
@@ -130,6 +117,22 @@ def compare_complex_classifiers(X_train, y_train, X_test, y_test):
     f.write(str(random_search.best_estimator_))
     score = random_search.score(X_test, y_test)
     print 'Random Forest', score
+
+    # Adaboost
+
+    param_dist = {'learning_rate':stats.uniform(0.01, 1)}
+
+    clf = AdaBoostClassifier(n_estimators=100)
+
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+                                       n_iter=n_iter_search, pre_dispatch=3, n_jobs=-1)
+
+    random_search.fit(X_train, y_train.values.ravel())
+
+    f.write(str(random_search.best_estimator_))
+    score = random_search.score(X_test, y_test)
+    print 'Adaboost', score
+
 
 
 def test_with_some_datasets(dataset_files):

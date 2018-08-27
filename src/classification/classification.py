@@ -23,32 +23,113 @@ from sklearn.gaussian_process.kernels import RBF
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.linear_model import Perceptron
+from sklearn import metrics
+import numpy as np
+
+from scipy import stats
 
 DATAPATH = '../../data'
 
 
-def compare_classifiers(X_train, y_train, X_test, y_test):
-    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-             "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
-             "Naive Bayes", "QDA"]
+def report(results, n_top=3):
+    for i in range(1, n_top + 1):
+        candidates = np.flatnonzero(results['rank_test_score'] == i)
+        for candidate in candidates:
+            print("Model with rank: {0}".format(i))
+            print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
+                results['mean_test_score'][candidate],
+                results['std_test_score'][candidate]))
+            print("Parameters: {0}".format(results['params'][candidate]))
+            print("")
 
+
+def compare_dummy_classifiers(X_train, y_train, X_test, y_test):
+    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
+             "Decision Tree", "AdaBoost",
+             "Naive Bayes", "LDA"]
     classifiers = [
         KNeighborsClassifier(4),
         SVC(kernel="linear", C=0.025),
         SVC(gamma=2, C=1),
         GaussianProcessClassifier(1.0 * RBF(1.0)),
         DecisionTreeClassifier(max_depth=5),
-        RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
-        MLPClassifier(alpha=1),
         AdaBoostClassifier(),
         GaussianNB(),
-        QuadraticDiscriminantAnalysis()]
+        LinearDiscriminantAnalysis()]
 
     for name, clf in zip(names, classifiers):
         clf.fit(X_train, y_train)
         score = clf.score(X_test, y_test)
         print(name, score)
+
+
+def compare_complex_classifiers(X_train, y_train, X_test, y_test):
+    n_iter_search = 70
+    f= open('../../data/best_params.txt','w')
+    # RDA
+    parameter_distributions = {'reg_param': stats.uniform(0, 1)}
+    rda = QuadraticDiscriminantAnalysis(priors=2)
+    random_search = RandomizedSearchCV(rda, param_distributions=parameter_distributions, n_iter=n_iter_search,
+                                       pre_dispatch=2, n_jobs=-1)
+    random_search.fit(X_train, y_train.values.ravel())
+    score = random_search.score(X_test, y_test)
+    print 'RDA', score
+
+    # Perceptron
+    param_dist = {"penalty": [None, 'l2', 'l1', 'elasticnet'],
+                  "alpha": stats.uniform(0.001, 0.05),
+                  "fit_intercept": [True, False]
+                  }
+
+    per = Perceptron(n_jobs=-1, warm_start=True)
+
+    random_search = RandomizedSearchCV(per, param_distributions=param_dist,
+                                       n_iter=n_iter_search, pre_dispatch=3, n_jobs=-1)
+    random_search.fit(X_train, y_train.values.ravel())
+    f.write(str(random_search.best_estimator_))
+
+    score = random_search.score(X_test, y_test)
+    print 'Perceptron', score
+
+    # MLP
+    param_dist = {'learning_rate': ['constant','invscaling','adaptive'],
+                    'alpha':stats.uniform(0.0001, 0.05),
+                    'hidden_layer_sizes': stats.randint(4, 12),
+                    'activation': ['identity', 'logistic', 'tanh', 'relu'],
+                    }
+    mlp = MLPClassifier(solver='adam',warm_start=True)
+    random_search = RandomizedSearchCV(mlp, param_distributions=param_dist,
+                                       n_iter=n_iter_search,pre_dispatch=3, n_jobs=-1)
+
+    random_search.fit(X_train, y_train.values.ravel())
+
+    f.write(str(random_search.best_estimator_))
+    score = random_search.score(X_test, y_test)
+    print 'MLP', score
+
+    # Random forest
+
+    param_dist = {"max_depth": [3, None],
+                  "max_features": stats.randint(1, 11),
+                  "min_samples_split": stats.randint(2, 11),
+                  "min_samples_leaf": stats.randint(1, 11),
+                  "bootstrap": [True, False],
+                  "criterion": ["gini", "entropy"]}
+
+    clf = RandomForestClassifier(n_estimators=20)
+
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+                                       n_iter=n_iter_search, pre_dispatch=3, n_jobs=-1)
+
+    random_search.fit(X_train, y_train.values.ravel())
+
+    f.write(str(random_search.best_estimator_))
+    score = random_search.score(X_test, y_test)
+    print 'Random Forest', score
 
 
 def test_with_some_datasets(dataset_files):
@@ -57,15 +138,16 @@ def test_with_some_datasets(dataset_files):
         try:
             df = pd.read_csv(path)
             y = df.pop('histology_tier1')
-            X = df.drop(['Unnamed: 0', 'histology_tier2', 'donor_age_at_diagnosis', 'donor_sex'], axis=1)
+            # [ 'donor_age_at_diagnosis', 'donor_sex']
+            X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
             X[X.dtypes[(X.dtypes == "float64") | (X.dtypes == "int64")]
                 .index.values].hist(figsize=[11, 11])
             # plt.show()
             X_train, X_test, Y_train, Y_test = \
                 train_test_split(pd.get_dummies(X), y, test_size=.2, random_state=42)
             scaler = MinMaxScaler()
-            # X_train[['donor_age_at_diagnosis']] = scaler.fit_transform(X_train[['donor_age_at_diagnosis']])
-            # X_test[['donor_age_at_diagnosis']] = scaler.fit_transform(X_test[['donor_age_at_diagnosis']])
+            X_train[['donor_age_at_diagnosis']] = scaler.fit_transform(X_train[['donor_age_at_diagnosis']])
+            X_test[['donor_age_at_diagnosis']] = scaler.fit_transform(X_test[['donor_age_at_diagnosis']])
 
             for column in X_train.columns:
                 if 'chr' in column:
@@ -80,10 +162,11 @@ def test_with_some_datasets(dataset_files):
                     X_train[[column]] = scaler.fit_transform(X_train[[column]])
                     X_test[[column]] = scaler.fit_transform(X_test[[column]])
             print 'Dataset', dataset_file
-            print 'Columns:', X.columns
-            compare_classifiers(X_train, Y_train, X_test, Y_test)
-        except:
-            print(dataset_file, 'does not exist')
+            # print 'Columns:', X.columns
+            compare_complex_classifiers(X_train, Y_train, X_test, Y_test)
+        except Exception as e:
+            print(e)
+            # print(dataset_file, 'does not exist')
 
 
 def main():

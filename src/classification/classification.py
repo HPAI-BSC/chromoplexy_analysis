@@ -54,9 +54,9 @@ def compare_dummy_classifiers(X_train, y_train, X_test, y_test):
         print(name, score)
 
 
-def compare_complex_classifiers(X_train, y_train, X_test, y_test):
+def compare_complex_classifiers(X_train, y_train, X_test, y_test,name):
     n_iter_search = 70
-    f= open('../../data/best_params.txt','w')
+    f= open('../../data/best_params'+name+'.txt','w')
     # RDA
     parameter_distributions = {'reg_param': stats.uniform(0, 1)}
     rda = QuadraticDiscriminantAnalysis(priors=2)
@@ -78,8 +78,10 @@ def compare_complex_classifiers(X_train, y_train, X_test, y_test):
                                        n_iter=n_iter_search, pre_dispatch=3, n_jobs=-1)
     random_search.fit(X_train, y_train.values.ravel())
     f.write(str(random_search.best_estimator_))
+    f.write('\n')
 
     score = random_search.score(X_test, y_test)
+    f.write(str(score))
     print 'Perceptron', score
 
     # MLP
@@ -95,7 +97,9 @@ def compare_complex_classifiers(X_train, y_train, X_test, y_test):
     random_search.fit(X_train, y_train.values.ravel())
 
     f.write(str(random_search.best_estimator_))
+    f.write('\n')
     score = random_search.score(X_test, y_test)
+    f.write(str(score))
     print 'MLP', score
 
     # Random forest
@@ -115,7 +119,10 @@ def compare_complex_classifiers(X_train, y_train, X_test, y_test):
     random_search.fit(X_train, y_train.values.ravel())
 
     f.write(str(random_search.best_estimator_))
+    f.write('\n')
+
     score = random_search.score(X_test, y_test)
+    f.write(str(score))
     print 'Random Forest', score
 
     # Adaboost
@@ -166,7 +173,7 @@ def test_with_some_datasets(dataset_files):
                     X_test[[column]] = scaler.fit_transform(X_test[[column]])
             print 'Dataset', dataset_file
             # print 'Columns:', X.columns
-            compare_complex_classifiers(X_train, Y_train, X_test, Y_test)
+            compare_complex_classifiers(X_train, Y_train, X_test, Y_test,name=dataset_file)
         except Exception as e:
             print(e)
             # print(dataset_file, 'does not exist')

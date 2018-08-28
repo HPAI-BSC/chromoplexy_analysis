@@ -31,7 +31,7 @@ The gspan implementation is taken from:
 [1] https://github.com/Jokeren/DataMining-gSpan
 
 TODO:
-    - Decide what support to use, for now I'm ussing 0.8
+    - Decide what support to use, for now I'm using 0.8
 """
 
 import os

@@ -131,9 +131,10 @@ def describe(df):
 
 def main():
     # generate_csv()
-    data = pd.read_csv('../../data/metadatos_v2.0.csv')
-    data = preprocessing(data)
-    describe(data)
+    # data = pd.read_csv('../../data/metadatos_v2.0.csv')
+    # data = preprocessing(data)
+    clean = pd.read_csv('../../data/datasets/classification_dataset_-1_0.7_2000.csv')
+    describe(clean)
 
 
 if __name__ == '__main__':

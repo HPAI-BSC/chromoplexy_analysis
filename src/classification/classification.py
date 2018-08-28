@@ -281,7 +281,7 @@ def test_with_some_datasets(dataset_files):
             #     .index.values].hist(figsize=[11, 11])
             # plt.show()
             X_train, X_test, Y_train, Y_test = \
-                train_test_split(pd.get_dummies(X), y, test_size=.2, random_state=42)
+                train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
             scaler = MinMaxScaler()
             # X_train[['donor_age_at_diagnosis']] = scaler.fit_transform(X_train[['donor_age_at_diagnosis']])
             # X_test[['donor_age_at_diagnosis']] = scaler.fit_transform(X_test[['donor_age_at_diagnosis']])

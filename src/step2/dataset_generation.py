@@ -328,7 +328,7 @@ def generate_dataset(path, data_path, name='classification_csv'):
     :return:
     """
     print('Generating csv..')
-    metadata = pd.read_csv(data_path + '/raw_original_data/clean_metadata.csv')
+    metadata = pd.read_csv(data_path + '/raw_original_data/metadatos_v2.0.csv')
     metadata = metadata.set_index('sampleID')
 
     data = Data().load_from_file(path)
@@ -357,6 +357,7 @@ def generate_dataset(path, data_path, name='classification_csv'):
                 graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
             i += 1
         else:
+            # TODO: move this files to another folder instead of printing them
             print(patient.id)
 
     # I'll try to add chromosome relative information.
@@ -434,11 +435,15 @@ def main():
         data_path = DATAPATH + '/raw_original_data/allfiles'
         all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
         print('Generating the raw data...')
-        file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
-                                             data_path=DATAPATH, processed_path=PROCESSED_PATH,
-                                             gspan_data_folder=GSPAN_DATA_FOLDER)
-        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE)
-        generate_dataset(path=file_path, data_path=DATAPATH, name=name)
+        # file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
+        #                                      data_path=DATAPATH, processed_path=PROCESSED_PATH,
+        #                                      gspan_data_folder=GSPAN_DATA_FOLDER)
+        file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
+        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '_nan'
+        try:
+            generate_dataset(path=file_path, data_path=DATAPATH, name=name)
+        except:
+            pass
         end_time = timedelta(seconds=time.time() - init)
         time_per_support[support] = end_time
 

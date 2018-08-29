@@ -1,3 +1,8 @@
+"""
+TODO: Try nan imputation knn
+TODO: Order this code.
+TODO: Tree exploration.
+"""
 import sys
 import os
 
@@ -254,19 +259,51 @@ def plot_feature_importance(feature_importance, name):
         os.mkdir(plot_path + '/feature_importance/')
 
 
-def preprocessing(X_train, X_test, percentage_features):
-    # Now I'll try some dimensionality reduction techniques
+# def preprocessing(X_train, X_test, percentage_features):
+#     # Now I'll try some dimensionality reduction techniques
+#
+#     # SVD
+#     num_features = len(X_train.columns)
+#     new_num_features = int(num_features * percentage_features)
+#     print'Number of features:', num_features, '\n', 'New number of features:', new_num_features
+#     svd = TruncatedSVD(n_components=new_num_features)
+#     X_train_svd = svd.fit_transform(X_train)
+#     print(svd.explained_variance_ratio_)
+#     X_test_svd = svd.fit_transform(X_test)
+#     print(svd.explained_variance_ratio_)
+#     return X_train_svd, X_test_svd
 
-    # SVD
-    num_features = len(X_train.columns)
-    new_num_features = int(num_features * percentage_features)
-    print'Number of features:', num_features, '\n', 'New number of features:', new_num_features
-    svd = TruncatedSVD(n_components=new_num_features)
-    X_train_svd = svd.fit_transform(X_train)
-    print(svd.explained_variance_ratio_)
-    X_test_svd = svd.fit_transform(X_test)
-    print(svd.explained_variance_ratio_)
-    return X_train_svd, X_test_svd
+
+def nan_imputing(df):
+    """
+    Courrent strategy for nans: replace with the most_frequent
+    TODO: replace with the most common age per cancer type.
+
+    Droped tumor_stage1 and tumor_stage2
+    :param df:
+    :return:
+    """
+    # Imput missing data with knn
+    from fancyimpute import MICE, KNN
+    fancy_imputed = df
+    # print(df.head())
+    dummies = pd.get_dummies(df)
+    imputed = pd.DataFrame(data=MICE(verbose=False).complete(dummies), columns=dummies.columns, index=dummies.index)
+    fancy_imputed.donor_age_at_diagnosis = imputed.donor_age_at_diagnosis
+
+    # imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
+    # imp.fit(df['donor_age_at_diagnosis'].values.reshape(-1, 1))
+    # df['donor_age_at_diagnosis'] = imp.fit_transform(df[['donor_age_at_diagnosis']]).ravel()
+    fancy_imputed['donor_age_at_diagnosis'] = fancy_imputed['donor_age_at_diagnosis'].astype(np.int)
+
+    # Drop tumor stage 1, it's very unbalanced
+    # df = df.drop('tumor_stage1', axis=1)
+    # # Drop tumor stage 2, it's very unbalanced + useless
+    # df = df.drop('tumor_stage2', axis=1)
+
+    # fancy_imputed.to_csv('../../data/raw_original_data/clean_metadata_mice.csv', index=False)
+
+    return fancy_imputed
 
 
 def test_with_some_datasets(dataset_files):
@@ -282,7 +319,8 @@ def test_with_some_datasets(dataset_files):
             # plt.show()
             X_train, X_test, Y_train, Y_test = \
                 train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
-            scaler = MinMaxScaler()
+            X_train = nan_imputing(X_train)
+            X_test = nan_imputing(X_test)
             # X_train[['donor_age_at_diagnosis']] = scaler.fit_transform(X_train[['donor_age_at_diagnosis']])
             # X_test[['donor_age_at_diagnosis']] = scaler.fit_transform(X_test[['donor_age_at_diagnosis']])
             X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + X_train['t2tINV']
@@ -308,12 +346,18 @@ def test_with_some_datasets(dataset_files):
 
             # X_train[['number_of_breaks']] = scaler.fit_transform(X_train[['number_of_breaks']])
             # X_test[['number_of_breaks']] = scaler.fit_transform(X_test[['number_of_breaks']])
-
             # X_train.to_csv(dataset_file + '.csv')
             print 'Dataset', dataset_file
             # print 'Columns:', X.columns
             only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file)
+
+            X_train['histology_tier1'] = Y_train
+            X_test['histology_tier1'] = Y_test
+            X_train.to_csv(path + '_clean_mice.csv')
+
+
         except Exception as e:
+            print(dataset_file)
             print(e)
             # print(dataset_file, 'does not exist')
 

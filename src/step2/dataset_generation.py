@@ -333,8 +333,10 @@ def generate_dataset(path, data_path, name='classification_csv'):
 
     data = Data().load_from_file(path)
     data.sort_by_support()
-    data.purge_less_common_subgraphs(5)
-
+    data.purge_less_common_subgraphs(50)
+    graph_description_df = pd.DataFrame(columns=['id','description'])
+    graph_description_df['id']=0
+    graph_description_df['description']=''
     patients_id = [p.id for p in data.patients]
     selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
     graph_columns = ['graph_' + str(graph.id) for graph in data.all_subgraphs]
@@ -345,7 +347,7 @@ def generate_dataset(path, data_path, name='classification_csv'):
     # Put 0 in all the columns of this patient
     graphs_dataset.loc[:, graph_columns] = 0
     i = 0
-    print 'Patients without metadata: '
+    # print 'Patients without metadata: '
     for patient in data.patients:
         if patient.id in metadata.index:
             # if i %100 ==0:
@@ -353,12 +355,15 @@ def generate_dataset(path, data_path, name='classification_csv'):
             for graph_description in patient.graphs.keys():
                 id = data.existing_subgraphs[graph_description]
                 column = 'graph_' + str(id)
+                graph_description_df.loc[id,'id'] = id
+                graph_description_df.loc[id,'description'] = graph_description
                 # Put the support of the graph corresponding to this patient
                 graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
             i += 1
         else:
             # TODO: move this files to another folder instead of printing them
-            print(patient.id)
+            # print(patient.id)
+            pass
 
     # I'll try to add chromosome relative information.
     chromosomes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 'X', 'Y']
@@ -392,6 +397,9 @@ def generate_dataset(path, data_path, name='classification_csv'):
         for svclass in count_svclass.index:
             graphs_dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
 
+    print(graph_description_df)
+    graph_description_df.to_csv(data_path + '/datasets/' + name + 'graph_desc' + '.csv')
+
     try:
         graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
     except:
@@ -407,7 +415,7 @@ def main():
 
     MAX_DISTANCE = 2000
 
-    supports = [1, 0.9, 0.7, 0.6]
+    supports = [1, 0.9, 0.7]
 
     time_per_support = {}
     for support in supports:
@@ -440,10 +448,9 @@ def main():
         #                                      gspan_data_folder=GSPAN_DATA_FOLDER)
         file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
         name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '_nan'
-        try:
-            generate_dataset(path=file_path, data_path=DATAPATH, name=name)
-        except:
-            pass
+
+        generate_dataset(path=file_path, data_path=DATAPATH, name=name)
+
         end_time = timedelta(seconds=time.time() - init)
         time_per_support[support] = end_time
 

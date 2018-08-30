@@ -161,11 +161,11 @@ def plot_confusion_matrix(cm, classes,
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-    # if normalize:
-    #     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    #     print("Normalized confusion matrix")
-    # else:
-    #     print('Confusion matrix, without normalization')
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
 
     # print(cm)
     plt.figure(figsize=(10, 12))
@@ -194,13 +194,12 @@ def plot_confusion_matrix(cm, classes,
 def only_random_forest(X_train, y_train, X_test, y_test, name):
     # Random forest
     n_iter_search = 30
-    from pandas_ml import ConfusionMatrix
-    f = open('../../data/best_params' + 'random_forest' + name + '.txt', 'w')
+    # f = open('../../data/best_params' + 'random_forest' + name + '.txt', 'w')
     param_dist = {"max_depth": stats.randint(1, 11),
-                  "max_features": stats.randint(1, 11),
                   "min_samples_split": stats.randint(2, 11),
                   "min_samples_leaf": stats.randint(1, 11),
                   "bootstrap": [True, False],
+                  # "oob_score": [True, False],
                   "criterion": ["gini", "entropy"]}
 
     clf = RandomForestClassifier(n_estimators=30)
@@ -215,14 +214,34 @@ def only_random_forest(X_train, y_train, X_test, y_test, name):
 
     random_forest = RandomForestClassifier(**best_params)
 
-    random_forest.fit(X_train, y_train)
+    random_forest = random_forest.fit(X_train, y_train)
+
+    from sklearn import tree
+    import pydotplus
+
+    i = 0
+    for tree_in_forest in random_forest.estimators_[:1]:
+        # Create DOT data
+        dot_data = tree.export_graphviz(tree_in_forest, out_file=None,
+                                        feature_names=list(X_train.columns),
+                                        class_names = random_forest.classes_
+                                        )
+
+        # Draw graph
+        graph = pydotplus.graph_from_dot_data(dot_data)
+
+        # Show graph
+        graph.create_png()
+        graph.write_png(name + str(i) + ".png")
+        i+=1
+
     feature_importances = pd.DataFrame(random_forest.feature_importances_,
                                        index=X_train.columns,
                                        columns=['importance']).sort_values('importance', ascending=False)
     plot_feature_importance(feature_importances, name)
 
-    f.write(str(random_search.best_estimator_))
-    f.write('\n')
+    # f.write(str(random_search.best_estimator_))
+    # f.write('\n')
     score = random_forest.score(X_test, y_test)
 
     f.write('Random Forest ' + str(score))
@@ -237,9 +256,10 @@ def only_random_forest(X_train, y_train, X_test, y_test, name):
     plot_confusion_matrix(cnf_matrix, classes=class_names,
                           title='Confusion matrix, without normalization', name=name)
 
-    # Plot normalized confusion matrix
-    plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-                          title='Normalized confusion matrix', name=name)
+    # # Plot normalized confusion matrix
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix', name=name)
+
 
 
 def plot_feature_importance(feature_importance, name):
@@ -259,113 +279,105 @@ def plot_feature_importance(feature_importance, name):
         os.mkdir(plot_path + '/feature_importance/')
 
 
-# def preprocessing(X_train, X_test, percentage_features):
-#     # Now I'll try some dimensionality reduction techniques
-#
-#     # SVD
-#     num_features = len(X_train.columns)
-#     new_num_features = int(num_features * percentage_features)
-#     print'Number of features:', num_features, '\n', 'New number of features:', new_num_features
-#     svd = TruncatedSVD(n_components=new_num_features)
-#     X_train_svd = svd.fit_transform(X_train)
-#     print(svd.explained_variance_ratio_)
-#     X_test_svd = svd.fit_transform(X_test)
-#     print(svd.explained_variance_ratio_)
-#     return X_train_svd, X_test_svd
-
-
 def nan_imputing(df):
     """
-    Courrent strategy for nans: replace with the most_frequent
-    TODO: replace with the most common age per cancer type.
-
-    Droped tumor_stage1 and tumor_stage2
+    Courrent strategy for nans: MICE
     :param df:
     :return:
     """
-    # Imput missing data with knn
-    from fancyimpute import MICE, KNN
+    # Imput missing data with mice
+    from fancyimpute import MICE
     fancy_imputed = df
-    # print(df.head())
     dummies = pd.get_dummies(df)
     imputed = pd.DataFrame(data=MICE(verbose=False).complete(dummies), columns=dummies.columns, index=dummies.index)
     fancy_imputed.donor_age_at_diagnosis = imputed.donor_age_at_diagnosis
-
-    # imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
-    # imp.fit(df['donor_age_at_diagnosis'].values.reshape(-1, 1))
-    # df['donor_age_at_diagnosis'] = imp.fit_transform(df[['donor_age_at_diagnosis']]).ravel()
     fancy_imputed['donor_age_at_diagnosis'] = fancy_imputed['donor_age_at_diagnosis'].astype(np.int)
-
-    # Drop tumor stage 1, it's very unbalanced
-    # df = df.drop('tumor_stage1', axis=1)
-    # # Drop tumor stage 2, it's very unbalanced + useless
-    # df = df.drop('tumor_stage2', axis=1)
-
-    # fancy_imputed.to_csv('../../data/raw_original_data/clean_metadata_mice.csv', index=False)
-
     return fancy_imputed
+
+def test_with_some_datasets_only_graphs(dataset_files):
+    for dataset_file in dataset_files:
+        path = DATAPATH + '/datasets/' + dataset_file
+        # try:
+        if '.csv' in dataset_file:
+            df = pd.read_csv(path)
+            y = df.pop('histology_tier1')
+            # [ 'donor_age_at_diagnosis', 'donor_sex']
+            X = df.drop(['Unnamed: 0', 'histology_tier2','donor_age_at_diagnosis','donor_sex','tumor_stage1','tumor_stage2','number_of_breaks'], axis=1)
+            for column in X.columns:
+                if 'chr' in column:
+                    X = X.drop(column,axis=1)
+                if 'DUP' in column:
+                    X = X.drop(column,axis=1)
+                if 'DEL' in column:
+                    X = X.drop(column, axis=1)
+                if 'TRA' in column:
+                    X = X.drop(column, axis=1)
+                if 'h2hINV' in column:
+                    X = X.drop(column, axis=1)
+                if 't2tINV' in column:
+                    X = X.drop(column, axis=1)
+
+            X_train, X_test, Y_train, Y_test = \
+                train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
+            print 'Dataset', dataset_file
+            only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file)
+
+            X_train['histology_tier1'] = Y_train
+            X_test['histology_tier1'] = Y_test
+            X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file + '_clean.csv')
+
+
+
 
 
 def test_with_some_datasets(dataset_files):
     for dataset_file in dataset_files:
         path = DATAPATH + '/datasets/' + dataset_file
         try:
-            df = pd.read_csv(path)
-            y = df.pop('histology_tier1')
-            # [ 'donor_age_at_diagnosis', 'donor_sex']
-            X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
-            # X[X.dtypes[(X.dtypes == "float64") | (X.dtypes == "int64")]
-            #     .index.values].hist(figsize=[11, 11])
-            # plt.show()
-            X_train, X_test, Y_train, Y_test = \
-                train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
-            X_train = nan_imputing(X_train)
-            X_test = nan_imputing(X_test)
-            # X_train[['donor_age_at_diagnosis']] = scaler.fit_transform(X_train[['donor_age_at_diagnosis']])
-            # X_test[['donor_age_at_diagnosis']] = scaler.fit_transform(X_test[['donor_age_at_diagnosis']])
-            X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + X_train['t2tINV']
-            X_test['number_of_breaks'] = X_test['DUP'] + X_test['DEL'] + X_test['TRA'] + X_test['h2hINV'] + X_test['t2tINV']
-            for column in X_train.columns:
-                if 'chr' in column:
-                    X_train['proportion_' + column] = 0
-                    X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
-                                                                       np.float32(X_train[['number_of_breaks']]))
-                    X_test['proportion_' + column] = 0
-                    X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
-                                                                      np.float32(X_test[['number_of_breaks']]))
+            if '.csv' in dataset_file:
+                df = pd.read_csv(path)
+                y = df.pop('histology_tier1')
+                X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
+                X_train, X_test, Y_train, Y_test = \
+                    train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
+                X_train = nan_imputing(X_train)
+                X_test = nan_imputing(X_test)
+                X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + X_train['t2tINV']
+                X_test['number_of_breaks'] = X_test['DUP'] + X_test['DEL'] + X_test['TRA'] + X_test['h2hINV'] + X_test['t2tINV']
+                for column in X_train.columns:
+                    if 'chr' in column:
+                        X_train['proportion_' + column] = 0
+                        X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
+                                                                           np.float32(X_train[['number_of_breaks']]))
+                        X_test['proportion_' + column] = 0
+                        X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
+                                                                          np.float32(X_test[['number_of_breaks']]))
 
-                if 'DUP' in column or 'DEL' in column or 'TRA' in column or 'h2hINV' in column or 't2tINV' in column:
-                    X_train['proportion_' + column] = 0
-                    X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
-                                                                       np.float32(X_train[['number_of_breaks']]))
-                    X_test['proportion_' + column] = 0
-                    X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
-                                                                      np.float32(X_test[['number_of_breaks']]))
-                    # X_train[[column]] = scaler.fit_transform(np.float32(X_train[[column]]))
-                    # X_test[[column]] = scaler.fit_transform(np.float32(X_test[[column]]))
+                    if 'DUP' in column or 'DEL' in column or 'TRA' in column or 'h2hINV' in column or 't2tINV' in column:
+                        X_train['proportion_' + column] = 0
+                        X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
+                                                                           np.float32(X_train[['number_of_breaks']]))
+                        X_test['proportion_' + column] = 0
+                        X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
+                                                                          np.float32(X_test[['number_of_breaks']]))
 
-            # X_train[['number_of_breaks']] = scaler.fit_transform(X_train[['number_of_breaks']])
-            # X_test[['number_of_breaks']] = scaler.fit_transform(X_test[['number_of_breaks']])
-            # X_train.to_csv(dataset_file + '.csv')
-            print 'Dataset', dataset_file
-            # print 'Columns:', X.columns
-            only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file)
+                print 'Dataset', dataset_file
+                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file+'_meta')
 
-            X_train['histology_tier1'] = Y_train
-            X_test['histology_tier1'] = Y_test
-            X_train.to_csv(path + '_clean_mice.csv')
-
-
+                X_train['histology_tier1'] = Y_train
+                X_test['histology_tier1'] = Y_test
+                X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file + '_clean_meta.csv')
         except Exception as e:
             print(dataset_file)
             print(e)
-            # print(dataset_file, 'does not exist')
+            print(dataset_file, 'does not exist')
 
 
 def main():
     # datasets = ['classification_dataset_2601_0.8_2000.csv', 'classification_dataset_2601_0.8_1500.csv']
     datasets = os.listdir(DATAPATH + '/datasets/')
-    test_with_some_datasets(datasets)
+    test_with_some_datasets_only_graphs(datasets)
+    # test_with_some_datasets(datasets)
 
 
 if __name__ == '__main__':

@@ -98,14 +98,92 @@ def study_donor_age_vs_histology():
     plt.savefig('../../data/plots/data_analysis/donor_age_vs_histology_without_nans.png')
 
 
-# def bone_imputation():
-#     # NOT TESTED
-#     from scipy.stats import rv_discrete
-#     x_k = [[1, 20], [20, 34], [35, 44], [45, 54], [55, 64], [65, 74], [75, 84]]
-#     p_k = [27.3, 15.4, 9.4, 12.1, 12.8, 11.7, 7.6]
-#     bone_cancer_distribution = rv_discrete(name='bone', values=(x_k, p_k))
-#     df['donor_age_at_diagnosis'] = df.apply(lambda row: bone_random_choice() if (
-#                 np.isnan(row['donor_age_at_diagnosis']) & row['histology_tier2'] == 'Bone/SoftTissue')  else row['donor_age_at_diagnosis'],axis=1)
+from natsort import natsorted
+
+
+def deletion_frequency_per_chromosome():
+    DATAPATH = '../../data'
+    NUMBER_OF_SAMPLES = -1
+
+    # Directory containing the files
+    data_path = DATAPATH + '/raw_original_data/allfiles/'
+    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+
+    df = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
+
+    df = df.set_index('sampleID')
+
+    all_ct = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                          index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 'X',
+                                 'Y'])
+
+    all_ct_ECTODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                   index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                                          'X', 'Y'])
+    all_ct_ENDODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                   index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                                          'X', 'Y'])
+    all_ct_NEURAL_CREST = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                       index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+                                              22, 'X', 'Y'])
+    all_ct_MESODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                   index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                                          'X', 'Y'])
+
+    all_ct.index = all_ct.index.map(str)
+
+    all_ct_ECTODERM.index = all_ct_ECTODERM.index.map(str)
+    all_ct_ENDODERM.index = all_ct_ENDODERM.index.map(str)
+    all_ct_NEURAL_CREST.index = all_ct_NEURAL_CREST.index.map(str)
+    all_ct_MESODERM.index = all_ct_MESODERM.index.map(str)
+
+
+    all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+    for patient in all_patients:
+
+        patient_path = data_path + patient
+        patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
+        patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
+        ct = pd.crosstab(patient_breaks['chrom2'], patient_breaks['svclass'])
+        ct.index = ct.index.map(str)
+
+        all_ct = all_ct.add(ct, fill_value=0)
+        patient = patient.replace('.vcf.tsv','')
+        try:
+            if df.loc[patient, 'histology_tier1'] == 'ECTODERM':
+                all_ct_ECTODERM = all_ct_ECTODERM.add(ct, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'ENDODERM':
+                all_ct_ENDODERM = all_ct_ENDODERM.add(ct, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'NEURAL_CREST':
+                all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.add(ct, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'MESODERM':
+                all_ct_MESODERM = all_ct_MESODERM.add(ct, fill_value=0)
+        except:
+            pass
+
+    plt.figure(figsize=(20, 10))
+
+    values = all_ct['DEL'].values
+
+    all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+
+    all_ct_ECTODERM = all_ct_ECTODERM.reindex(index=natsorted(all_ct_ECTODERM.index)).fillna(0)
+    all_ct_ENDODERM = all_ct_ENDODERM.reindex(index=natsorted(all_ct_ENDODERM.index)).fillna(0)
+    all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.reindex(index=natsorted(all_ct_NEURAL_CREST.index)).fillna(0)
+    all_ct_MESODERM = all_ct_MESODERM.reindex(index=natsorted(all_ct_MESODERM.index)).fillna(0)
+    print all_ct
+    ax = plt.subplot()
+    # plt.bar(all_ct.index, all_ct['DEL'])
+    ax.bar(all_ct_ECTODERM.index, all_ct_ECTODERM['DEL'],label='ECTODERM')
+    ax.bar(all_ct_ENDODERM.index, all_ct_ENDODERM['DEL'], label='ENDODERM')
+    ax.bar(all_ct_NEURAL_CREST.index, all_ct_NEURAL_CREST['DEL'],label='NEURAL_CREST')
+    ax.bar(all_ct_MESODERM.index, all_ct_MESODERM['DEL'], label='MESODERM')
+    print(all_ct_ECTODERM)
+    # plt.xticks(range(len(D)), list(D.keys()), rotation=30)
+    plt.title('Frecuency of Deletions')
+    ax.legend()
+    plt.show()
+
 
 def nan_imputing(df):
     """
@@ -120,7 +198,7 @@ def nan_imputing(df):
     from fancyimpute import MICE, KNN
     fancy_imputed = df
     print(df.head())
-    dummies = pd.get_dummies(df.drop('sampleID',axis=1))
+    dummies = pd.get_dummies(df.drop('sampleID', axis=1))
     imputed = pd.DataFrame(data=MICE().complete(dummies), columns=dummies.columns, index=dummies.index)
     fancy_imputed.donor_age_at_diagnosis = imputed.donor_age_at_diagnosis
 
@@ -188,10 +266,11 @@ def describe(df):
 
 def main():
     # generate_csv()
-    data = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
-    clean = nan_imputing(data)
+    # data = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
+    # clean = nan_imputing(data)
     # clean = pd.read_csv('../../data/datasets/classification_dataset_-1_0.7_2000.csv')
-    describe(clean)
+    deletion_frequency_per_chromosome()
+    # describe(clean)
     # study_donor_age_vs_histology()
 
 

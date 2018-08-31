@@ -247,6 +247,11 @@ def generate_subgraphs(gspan_file_name, s, data_path, gspan_data_folder):
         os.mkdir(outputpath)
     except:
         pass
+    try:
+        os.mkdir(data_path + gspan_data_folder)
+    except:
+        pass
+
     outputfile = data_path + '/temporal_gspan_data/' + gspan_file_name
 
     command = shlex.split("/home/raquel/Documents/DataMining-gSpan/build/gbolt -input_file " + filepath +
@@ -271,10 +276,11 @@ def process_patient(patient_id, max_distance, min_support, data_path, gspan_data
         plot_one_file(patient_id)
 
     if os.path.isfile(data_path + gspan_data_folder + patient_id + '.txt'):
+        print(data_path + gspan_data_folder + patient_id + '.txt')
         report = generate_subgraphs(patient_id, s=min_support, data_path=data_path, gspan_data_folder=gspan_data_folder)
     else:
         generate_one_patient_graph(patient_id, max_distance, gspan_path=gspan_data_folder, with_vertex_weight=False,
-                                   with_vertex_chromosome=False,
+                                   with_vertex_chromosome=True,
                                    with_edge_weight=False)
         report = generate_subgraphs(patient_id, s=min_support, data_path=data_path, gspan_data_folder=gspan_data_folder)
 
@@ -328,7 +334,9 @@ def generate_dataset(path, data_path, name='classification_csv'):
     :return:
     """
     print('Generating csv..')
+
     metadata = pd.read_csv(data_path + '/raw_original_data/metadatos_v2.0.csv')
+
     metadata = metadata.set_index('sampleID')
 
     data = Data().load_from_file(path)
@@ -415,7 +423,7 @@ def main():
 
     MAX_DISTANCE = 2000
 
-    supports = [1, 0.9, 0.7]
+    supports = [1, 0.9]
 
     time_per_support = {}
     for support in supports:
@@ -423,8 +431,11 @@ def main():
 
         MIN_SUPPORT = support
         # Data paths:
-        DATAPATH = '../../data'
-
+        DATAPATH = '../../chromosome_data'
+        try:
+            os.mkdir(DATAPATH)
+        except:
+            pass
         GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
 
         PROCESSED_PATH = DATAPATH + '/raw_processed_data/processsed_' + str(NUMBER_OF_SAMPLES) + \
@@ -443,11 +454,11 @@ def main():
         data_path = DATAPATH + '/raw_original_data/allfiles'
         all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
         print('Generating the raw data...')
-        # file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
-        #                                      data_path=DATAPATH, processed_path=PROCESSED_PATH,
-        #                                      gspan_data_folder=GSPAN_DATA_FOLDER)
-        file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
-        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '_nan'
+        file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
+                                             data_path=DATAPATH, processed_path=PROCESSED_PATH,
+                                             gspan_data_folder=GSPAN_DATA_FOLDER)
+        # file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
+        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '_graph_chromosome'
 
         generate_dataset(path=file_path, data_path=DATAPATH, name=name)
 

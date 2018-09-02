@@ -258,6 +258,32 @@ def generate_subgraphs(gspan_file_name, s, data_path, gspan_data_folder):
     return report
 
 
+from gspan_mining.config import parser
+from gspan_mining.gspan import gSpan
+
+
+def generate_subgraphs_one_core(gspan_file_name, s,data_path, gspan_data_folder, l=2, plot=False):
+    filepath = data_path + gspan_data_folder + gspan_file_name + '.txt'
+    args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' -u 4 -v False ' + '-p ' + str(plot) + ' ' + filepath
+    FLAGS, _ = parser.parse_known_args(args=args_str.split())
+    gs = gSpan(
+        database_file_name=FLAGS.database_file_name,
+        min_support=FLAGS.min_support,
+        min_num_vertices=FLAGS.lower_bound_of_num_vertices,
+        max_num_vertices=FLAGS.upper_bound_of_num_vertices,
+        max_ngraphs=FLAGS.num_graphs,
+        is_undirected=(not FLAGS.directed),
+        verbose=FLAGS.verbose,
+        visualize=FLAGS.plot,
+        where=FLAGS.where
+    )
+
+    gs.run()
+    report = gs._report_df
+    gs = None
+    return report
+
+
 def process_patient(patient_id, max_distance, min_support, data_path, gspan_data_folder, plot_graph=False):
     """
     This function generates an array of subgraphs instances using the report returned by gspan
@@ -270,27 +296,32 @@ def process_patient(patient_id, max_distance, min_support, data_path, gspan_data
     if plot_graph:
         plot_one_file(patient_id)
 
-    if os.path.isfile(data_path + gspan_data_folder + patient_id + '.txt'):
-        report = generate_subgraphs(patient_id, s=min_support, data_path=data_path, gspan_data_folder=gspan_data_folder)
-    else:
-        generate_one_patient_graph(patient_id, max_distance, gspan_path=gspan_data_folder, with_vertex_weight=False,
+    if not os.path.isfile(data_path + gspan_data_folder + patient_id + '.txt'):
+        generate_one_patient_graph(patient_id, max_distance,general_data_path=data_path, gspan_path=gspan_data_folder, with_vertex_weight=False,
                                    with_vertex_chromosome=False,
                                    with_edge_weight=False)
-        report = generate_subgraphs(patient_id, s=min_support, data_path=data_path, gspan_data_folder=gspan_data_folder)
+    try:
+        report = generate_subgraphs_one_core(patient_id, s=min_support, data_path=data_path, gspan_data_folder=gspan_data_folder)
 
-    patient = Patient_instance(patient_id)
+        patient = Patient_instance(patient_id)
 
-    subgraphs = []
-    for i in report.index:
-        graph_description = report['description'][i]
-        graph_support = report['support'][i]
+        subgraphs = []
+        for i in report.index:
+            graph_description = report['description'][i]
+            graph_support = report['support'][i]
 
-        patient.add_graph(graph_description, graph_support)
+            patient.add_graph(graph_description, graph_support)
 
-        subgraph = Subgraph_instance(graph_description)
-        subgraph.add_patients([patient_id])
-        subgraph.add_support(graph_support)
-        subgraphs.append(subgraph)
+            subgraph = Subgraph_instance(graph_description)
+            subgraph.add_patients([patient_id])
+            subgraph.add_support(graph_support)
+            subgraphs.append(subgraph)
+    except Exception as e:
+        print(e)
+        print(patient_id, 'has no graphs')
+        patient = Patient_instance(patient_id)
+        subgraphs = []
+
     return subgraphs, patient
 
 
@@ -321,7 +352,7 @@ def process_list_of_patients(patients, max_distance, min_support, data_path, gsp
     return file_path
 
 
-def generate_dataset(path, data_path, name='classification_csv'):
+def generate_dataset(path, data_path,min_graphs, name='classification_csv'):
     """
     This function generates a dataset using the subgraphs of the patients and the metadata.
     :param path:
@@ -333,10 +364,10 @@ def generate_dataset(path, data_path, name='classification_csv'):
 
     data = Data().load_from_file(path)
     data.sort_by_support()
-    data.purge_less_common_subgraphs(50)
-    graph_description_df = pd.DataFrame(columns=['id','description'])
-    graph_description_df['id']=0
-    graph_description_df['description']=''
+    data.purge_less_common_subgraphs(min_graphs)
+    graph_description_df = pd.DataFrame(columns=['id', 'description'])
+    graph_description_df['id'] = 0
+    graph_description_df['description'] = ''
     patients_id = [p.id for p in data.patients]
     selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
     graph_columns = ['graph_' + str(graph.id) for graph in data.all_subgraphs]
@@ -355,8 +386,8 @@ def generate_dataset(path, data_path, name='classification_csv'):
             for graph_description in patient.graphs.keys():
                 id = data.existing_subgraphs[graph_description]
                 column = 'graph_' + str(id)
-                graph_description_df.loc[id,'id'] = id
-                graph_description_df.loc[id,'description'] = graph_description
+                graph_description_df.loc[id, 'id'] = id
+                graph_description_df.loc[id, 'description'] = graph_description
                 # Put the support of the graph corresponding to this patient
                 graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
             i += 1
@@ -398,24 +429,26 @@ def generate_dataset(path, data_path, name='classification_csv'):
             graphs_dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
 
     print(graph_description_df)
-    graph_description_df.to_csv(data_path + '/datasets/' + name + 'graph_desc' + '.csv')
-
     try:
-        graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
-    except:
         os.mkdir(data_path + '/datasets/')
-        graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
+    except:
+        pass
+
+    graph_description_df.to_csv(data_path + '/datasets/' + name + 'graph_desc' + '.csv')
+    graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
+
     print('Csv generated')
 
 
 def main():
-
     # This variables are global to simplify testing the code, will be removed later:
     NUMBER_OF_SAMPLES = -1
 
+    MIN_GRAPHS = 100
+
     MAX_DISTANCE = 2000
 
-    supports = [1, 0.9, 0.7]
+    supports = [1,]# 0.9, 0.8]
 
     time_per_support = {}
     for support in supports:
@@ -423,7 +456,7 @@ def main():
 
         MIN_SUPPORT = support
         # Data paths:
-        DATAPATH = '../../data'
+        DATAPATH = '../../data_chromosome'
 
         GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
 
@@ -443,20 +476,22 @@ def main():
         data_path = DATAPATH + '/raw_original_data/allfiles'
         all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
         print('Generating the raw data...')
-        # file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
-        #                                      data_path=DATAPATH, processed_path=PROCESSED_PATH,
-        #                                      gspan_data_folder=GSPAN_DATA_FOLDER)
-        file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
-        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '_nan'
+        file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
+                                             gspan_data_folder=GSPAN_DATA_FOLDER, data_path=DATAPATH,
+                                             processed_path=PROCESSED_PATH)
+        # file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
+        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(
+            MAX_DISTANCE) + '_nan'
 
-        generate_dataset(path=file_path, data_path=DATAPATH, name=name)
+        generate_dataset(path=file_path, data_path=DATAPATH,min_graphs=MIN_GRAPHS, name=name)
 
         end_time = timedelta(seconds=time.time() - init)
         time_per_support[support] = end_time
 
     for key in time_per_support.keys():
         print 'support:', key
-        print 'time:',  time_per_support[key]
+        print 'time:', time_per_support[key]
+
 
 if __name__ == '__main__':
     init = time.time()

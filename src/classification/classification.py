@@ -38,7 +38,7 @@ import numpy as np
 
 from scipy import stats
 
-DATAPATH = '../../data'
+DATAPATH = '../../data_chromosome'
 
 
 def compare_dummy_classifiers(X_train, y_train, X_test, y_test):
@@ -187,7 +187,7 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plot_path = '../../data/plots/confusion_matrix/'
+    plot_path = DATAPATH + '/plots/confusion_matrix/'
     plt.savefig(plot_path + title + name + '.png')
 
 
@@ -244,7 +244,7 @@ def only_random_forest(X_train, y_train, X_test, y_test, name):
     # f.write('\n')
     score = random_forest.score(X_test, y_test)
 
-    f.write('Random Forest ' + str(score))
+    # f.write('Random Forest ' + str(score))
     print 'Random Forest', score
     y_test_pred = random_search.predict(X_test)
     # Compute confusion matrix
@@ -271,7 +271,7 @@ def plot_feature_importance(feature_importance, name):
     plt.bar(values0, values1)
     plt.xticks(values0, rotation=90)
     plt.title('Feature importance')
-    plot_path = '../../data/plots/'
+    plot_path = DATAPATH + '/plots/'
     # plt.show()
     try:
         plt.savefig(plot_path + '/feature_importance/' + 'feature_importance_' + name + '.png')
@@ -298,43 +298,43 @@ def test_with_some_datasets_only_graphs(dataset_files):
     for dataset_file in dataset_files:
         path = DATAPATH + '/datasets/' + dataset_file
         # try:
-        if '.csv' in dataset_file:
-            df = pd.read_csv(path)
-            y = df.pop('histology_tier1')
-            # [ 'donor_age_at_diagnosis', 'donor_sex']
-            X = df.drop(['Unnamed: 0', 'histology_tier2','donor_age_at_diagnosis','donor_sex','tumor_stage1','tumor_stage2','number_of_breaks'], axis=1)
-            for column in X.columns:
-                if 'chr' in column:
-                    X = X.drop(column,axis=1)
-                if 'DUP' in column:
-                    X = X.drop(column,axis=1)
-                if 'DEL' in column:
-                    X = X.drop(column, axis=1)
-                if 'TRA' in column:
-                    X = X.drop(column, axis=1)
-                if 'h2hINV' in column:
-                    X = X.drop(column, axis=1)
-                if 't2tINV' in column:
-                    X = X.drop(column, axis=1)
+        if '.csv' in dataset_file and 'graph' not in dataset_file:
+            try:
+                df = pd.read_csv(path)
+                y = df.pop('histology_tier1')
 
-            X_train, X_test, Y_train, Y_test = \
-                train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
-            print 'Dataset', dataset_file
-            only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file)
+                # [ 'donor_age_at_diagnosis', 'donor_sex']
+                X = df.drop(['Unnamed: 0', 'histology_tier2','donor_age_at_diagnosis','donor_sex','tumor_stage1','tumor_stage2','number_of_breaks'], axis=1)
+                for column in X.columns:
+                    if 'chr' in column:
+                        X = X.drop(column,axis=1)
+                    if 'DUP' in column:
+                        X = X.drop(column,axis=1)
+                    if 'DEL' in column:
+                        X = X.drop(column, axis=1)
+                    if 'TRA' in column:
+                        X = X.drop(column, axis=1)
+                    if 'h2hINV' in column:
+                        X = X.drop(column, axis=1)
+                    if 't2tINV' in column:
+                        X = X.drop(column, axis=1)
 
-            X_train['histology_tier1'] = Y_train
-            X_test['histology_tier1'] = Y_test
-            X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file + '_clean.csv')
-
-
-
+                X_train, X_test, Y_train, Y_test = \
+                    train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
+                print 'Dataset', dataset_file
+                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file)
+                X_train['histology_tier1'] = Y_train
+                X_test['histology_tier1'] = Y_test
+                X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file + '_clean.csv')
+            except:
+                pass
 
 
 def test_with_some_datasets(dataset_files):
     for dataset_file in dataset_files:
         path = DATAPATH + '/datasets/' + dataset_file
         try:
-            if '.csv' in dataset_file:
+            if '.csv' in dataset_file and 'graph' not in dataset_file:
                 df = pd.read_csv(path)
                 y = df.pop('histology_tier1')
                 X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
@@ -377,7 +377,7 @@ def main():
     # datasets = ['classification_dataset_2601_0.8_2000.csv', 'classification_dataset_2601_0.8_1500.csv']
     datasets = os.listdir(DATAPATH + '/datasets/')
     test_with_some_datasets_only_graphs(datasets)
-    # test_with_some_datasets(datasets)
+    test_with_some_datasets(datasets)
 
 
 if __name__ == '__main__':

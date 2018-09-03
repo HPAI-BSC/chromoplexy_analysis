@@ -113,22 +113,22 @@ def deletion_frequency_per_chromosome():
 
     df = df.set_index('sampleID')
 
+    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+                    '19', '20', '21', '22', 'X', 'Y']
+
     all_ct = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
-                          index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 'X',
-                                 'Y'])
+                          index=chromosomes)
 
     all_ct_ECTODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
-                                   index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-                                          'X', 'Y'])
+                                   index=chromosomes)
     all_ct_ENDODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
-                                   index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-                                          'X', 'Y'])
+                                   index=chromosomes)
     all_ct_NEURAL_CREST = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
-                                       index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                                              22, 'X', 'Y'])
+                                       index=chromosomes)
     all_ct_MESODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
-                                   index=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-                                          'X', 'Y'])
+                                   index=chromosomes)
+
+    all_only_tra = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
 
     all_ct.index = all_ct.index.map(str)
 
@@ -137,13 +137,19 @@ def deletion_frequency_per_chromosome():
     all_ct_NEURAL_CREST.index = all_ct_NEURAL_CREST.index.map(str)
     all_ct_MESODERM.index = all_ct_MESODERM.index.map(str)
 
+    all_only_tra.index = all_only_tra.index.map(str)
+    all_only_tra = all_only_tra.reindex(index=natsorted(all_only_tra.index))
 
     all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+
     for patient in all_patients:
 
         patient_path = data_path + patient
+        # load patient breaks
         patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
+        # load the chromosomes as strings
         patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
+        # generate a crosstab of the svclass with the chromosomes
         ct = pd.crosstab(patient_breaks['chrom2'], patient_breaks['svclass'])
         ct.index = ct.index.map(str)
 
@@ -160,29 +166,55 @@ def deletion_frequency_per_chromosome():
                 all_ct_MESODERM = all_ct_MESODERM.add(ct, fill_value=0)
         except:
             pass
+        # The TRA classes have different chromosome1 and chromosome2, I want to make a heatmap of the changes.
 
-    plt.figure(figsize=(20, 10))
+        only_TRA = patient_breaks.loc[patient_breaks['svclass'] == 'TRA']
+        ct_tra = pd.crosstab(only_TRA['#chrom1'], only_TRA['chrom2'])
+        ct_tra.index = ct_tra.index.map(str)
 
-    values = all_ct['DEL'].values
+        all_only_tra = all_only_tra.add(ct_tra, fill_value=0)
 
-    all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+    import seaborn as sns
+    sns.set()
+    plt.figure(figsize=(15, 15))
 
-    all_ct_ECTODERM = all_ct_ECTODERM.reindex(index=natsorted(all_ct_ECTODERM.index)).fillna(0)
-    all_ct_ENDODERM = all_ct_ENDODERM.reindex(index=natsorted(all_ct_ENDODERM.index)).fillna(0)
-    all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.reindex(index=natsorted(all_ct_NEURAL_CREST.index)).fillna(0)
-    all_ct_MESODERM = all_ct_MESODERM.reindex(index=natsorted(all_ct_MESODERM.index)).fillna(0)
-    print all_ct
-    ax = plt.subplot()
-    # plt.bar(all_ct.index, all_ct['DEL'])
-    ax.bar(all_ct_ECTODERM.index, all_ct_ECTODERM['DEL'],label='ECTODERM')
-    ax.bar(all_ct_ENDODERM.index, all_ct_ENDODERM['DEL'], label='ENDODERM')
-    ax.bar(all_ct_NEURAL_CREST.index, all_ct_NEURAL_CREST['DEL'],label='NEURAL_CREST')
-    ax.bar(all_ct_MESODERM.index, all_ct_MESODERM['DEL'], label='MESODERM')
-    print(all_ct_ECTODERM)
-    # plt.xticks(range(len(D)), list(D.keys()), rotation=30)
-    plt.title('Frecuency of Deletions')
-    ax.legend()
+    all_only_tra = all_only_tra.reindex(index=natsorted(all_only_tra.index))
+    all_only_tra = all_only_tra[chromosomes]
+    all_only_tra = all_only_tra.astype(int)
+    all_only_tra_sym = pd.DataFrame(data=np.maximum(all_only_tra.values, all_only_tra.values.transpose()),columns=chromosomes, index=chromosomes,)
+
+    all_only_tra_sym.to_csv('tra_sym.csv')
+
+    print(all_only_tra_sym)
+    g = sns.heatmap(all_only_tra_sym,annot=True,linewidths=.5,cbar=False,fmt='g')
+    g.set_yticklabels(g.get_yticklabels(), rotation=0)
+    g.set_xticklabels(g.get_xticklabels(), rotation=90)
+    plt.title('Traslocations per chromosome')
     plt.show()
+
+    # plt.figure(figsize=(20, 10))
+    #
+    # values = all_ct['DEL'].values
+    #
+    # all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+    # plt.bar(all_ct.index, all_ct['TRA'])
+    #
+    # # all_ct_ECTODERM = all_ct_ECTODERM.reindex(index=natsorted(all_ct_ECTODERM.index)).fillna(0)
+    # # all_ct_ENDODERM = all_ct_ENDODERM.reindex(index=natsorted(all_ct_ENDODERM.index)).fillna(0)
+    # # all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.reindex(index=natsorted(all_ct_NEURAL_CREST.index)).fillna(0)
+    # # all_ct_MESODERM = all_ct_MESODERM.reindex(index=natsorted(all_ct_MESODERM.index)).fillna(0)
+    # # print all_ct
+    # # ax = plt.subplot()
+    # # # plt.bar(all_ct.index, all_ct['DEL'])
+    # # ax.bar(all_ct_ECTODERM.index, all_ct_ECTODERM['DEL'],label='ECTODERM')
+    # # ax.bar(all_ct_ENDODERM.index, all_ct_ENDODERM['DEL'], label='ENDODERM')
+    # # ax.bar(all_ct_NEURAL_CREST.index, all_ct_NEURAL_CREST['DEL'],label='NEURAL_CREST')
+    # # ax.bar(all_ct_MESODERM.index, all_ct_MESODERM['DEL'], label='MESODERM')
+    # # print(all_ct_ECTODERM)
+    # # plt.xticks(range(len(D)), list(D.keys()), rotation=30)
+    # plt.title('Frecuency of Deletions')
+    # plt.legend()
+    # plt.show()
 
 
 def nan_imputing(df):

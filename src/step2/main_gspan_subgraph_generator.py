@@ -61,17 +61,17 @@ def generate_all_patient_graphs(max_distance):
                 f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' 2\n')
 
 
-def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspan_format/', with_vertex_weight=False, with_vertex_chromosome=False,
+def generate_one_patient_graph(filename, max_distance,general_data_path, gspan_path='/allfiles_gspan_format/', with_vertex_weight=False, with_vertex_chromosome=False,
                                with_edge_weight=False):
     subgraphs = []
     # Directory containing the files
-    data_path = DATAPATH + '/raw_original_data/allfiles'
+    data_path = general_data_path + '/raw_original_data/allfiles'
     # Iterate over the files
     count = 0
 
-    breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename))
+    breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename),only_tra=True)
     if len(breaks) == 0:
-        # print 'WARNING: Empty data file',file_name
+        print 'WARNING: Empty data file',filename
         return
     adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,
                                                                                    max_distance)
@@ -85,35 +85,56 @@ def generate_one_patient_graph(filename, max_distance,gspan_path='/allfiles_gspa
 
     # store
     try:
-        os.mkdir(DATAPATH + gspan_path)
+        os.mkdir(general_data_path + gspan_path)
     except:
         pass
 
-    with open(DATAPATH + gspan_path + filename + '.txt', 'w') as f:
+    with open(general_data_path + gspan_path + filename + '.txt', 'w') as f:
         counter = 0
         map_nodes = {}
-        for g in subgraphs:
-            f.write('t # ' + str(counter) + '\n')
-            counter += 1
-            # Iterate over vertices
-            count = 0
-            for v in g.nodes():
-                map_nodes[v] = count
-                if with_vertex_weight:
-                    weight = g.nodes[v]['weights']
-                elif with_vertex_chromosome:
-                    weight = g.nodes[v]['chromosome']
-                else:
-                    weight = 2
-                f.write('v ' + str(map_nodes[v]) + ' ' + str(weight) + '\n')
-                count += 1
-            # Iterate over all edges
-            for edge in g.edges():
-                if with_edge_weight:
-                    weight = g.edges[edge]['weight']
-                else:
-                    weight = 2
-                f.write('e ' + str(map_nodes[edge[0]]) + ' ' + str(map_nodes[edge[1]]) + ' ' + str(weight) + '\n')
+        if with_vertex_chromosome:
+            for g in subgraphs:
+                f.write('t # ' + str(counter) + '\n')
+                counter += 1
+                # Iterate over vertices
+                count = 0
+                for v in g.nodes():
+                    if with_vertex_weight:
+                        weight = g.nodes[v]['weights']
+                    else:
+                        weight = 2
+                    f.write('v ' + str(v) + ' ' + str(g.nodes[v]['chromosome']) + '\n')
+                    count += 1
+                # Iterate over all edges
+                for edge in g.edges():
+                    if with_edge_weight:
+                        weight = g.edges[edge]['weight']
+                    else:
+                        weight = 2
+                    f.write('e ' + str(edge[0]) + ' ' + str(edge[1]) + ' ' + str(weight) + '\n')
+        else:
+            for g in subgraphs:
+                f.write('t # ' + str(counter) + '\n')
+                counter += 1
+                # Iterate over vertices
+                count = 0
+                for v in g.nodes():
+                    map_nodes[v] = count
+                    if with_vertex_weight:
+                        weight = g.nodes[v]['weights']
+                    elif with_vertex_chromosome:
+                        weight = g.nodes[v]['chromosome']
+                    else:
+                        weight = 2
+                    f.write('v ' + str(map_nodes[v]) + ' ' + str(weight) + '\n')
+                    count += 1
+                # Iterate over all edges
+                for edge in g.edges():
+                    if with_edge_weight:
+                        weight = g.edges[edge]['weight']
+                    else:
+                        weight = 2
+                    f.write('e ' + str(map_nodes[edge[0]]) + ' ' + str(map_nodes[edge[1]]) + ' ' + str(weight) + '\n')
 
 
 def main():

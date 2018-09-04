@@ -32,8 +32,25 @@ from sklearn.preprocessing import Imputer
 
 sys.path.insert(1, '../../src')
 
-DATAPATH = '../../raw_original_data/data/metadatos_v2.0.txt'
+DATAPATH = '../../data_chromosome/'
 
+METADATAPATH = DATAPATH + 'raw_original_data/data/metadatos_v2.0.txt'
+
+
+try:
+    os.mkdir(DATAPATH + 'plots')
+except:
+    pass
+
+try:
+    os.mkdir(DATAPATH + 'plots/tra_study')
+except:
+    pass
+
+try:
+    os.mkdir(DATAPATH + 'plots/data_analyisis')
+except:
+    pass
 
 def generate_csv():
     """
@@ -44,7 +61,7 @@ def generate_csv():
         columns=['sampleID', 'donor_sex', 'donor_age_at_diagnosis', 'histology_tier1', 'histology_tier2',
                  'tumor_stage1', 'tumor_stage2'])
 
-    with open(DATAPATH) as f:
+    with open(METADATAPATH) as f:
         for l in f:
             words = l.split()
             id = words[0]
@@ -95,14 +112,33 @@ def study_donor_age_vs_histology():
     sns.barplot(x=stacked.donor_age_at_diagnosis, y=stacked.value, hue=stacked.histology_tier1)
     plt.xticks(rotation=30)
     plt.title('Donor age vs Histology')
-    plt.savefig('../../data/plots/data_analysis/donor_age_vs_histology_without_nans.png')
+    plt.savefig(DATAPATH + '/plots/data_analysis/donor_age_vs_histology_without_nans.png')
 
 
 from natsort import natsorted
 
+def plot_heatmap_traslocations(all_only_tra, name):
+    import seaborn as sns
+    sns.set()
+    plt.figure(figsize=(15, 15))
+
+    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+                   '19', '20', '21', '22', 'X', 'Y']
+
+    all_only_tra = all_only_tra.reindex(index=natsorted(all_only_tra.index))
+    all_only_tra = all_only_tra[chromosomes]
+    all_only_tra = all_only_tra.astype(int)
+    all_only_tra = pd.DataFrame(data=np.maximum(all_only_tra.values, all_only_tra.values.transpose()),
+                                columns=chromosomes, index=chromosomes, )
+
+    print(all_only_tra)
+    g = sns.heatmap(all_only_tra, annot=True, linewidths=.5, cbar=False, fmt='g')
+    g.set_yticklabels(g.get_yticklabels(), rotation=0)
+    plt.title('Traslocations per chromosome of ' + name)
+    plt.savefig(DATAPATH + 'plots/tra_study/' + 'traslocations_' + name + '.png')
+
 
 def deletion_frequency_per_chromosome():
-    DATAPATH = '../../data'
     NUMBER_OF_SAMPLES = -1
 
     # Directory containing the files
@@ -130,6 +166,13 @@ def deletion_frequency_per_chromosome():
 
     all_only_tra = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
 
+    all_tra_ECTODERM = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
+    all_tra_ENDODERM = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
+    all_tra_NEURAL_CREST = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
+    all_tra_MESODERM = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
+
+
+
     all_ct.index = all_ct.index.map(str)
 
     all_ct_ECTODERM.index = all_ct_ECTODERM.index.map(str)
@@ -138,7 +181,11 @@ def deletion_frequency_per_chromosome():
     all_ct_MESODERM.index = all_ct_MESODERM.index.map(str)
 
     all_only_tra.index = all_only_tra.index.map(str)
-    all_only_tra = all_only_tra.reindex(index=natsorted(all_only_tra.index))
+    all_tra_ECTODERM.index = all_tra_ECTODERM.index.map(str)
+    all_tra_ENDODERM.index = all_tra_ENDODERM.index.map(str)
+    all_tra_NEURAL_CREST.index = all_tra_NEURAL_CREST.index.map(str)
+    all_tra_MESODERM.index = all_tra_MESODERM.index.map(str)
+
 
     all_ct = all_ct.reindex(index=natsorted(all_ct.index))
 
@@ -155,6 +202,7 @@ def deletion_frequency_per_chromosome():
 
         all_ct = all_ct.add(ct, fill_value=0)
         patient = patient.replace('.vcf.tsv','')
+        # Ignore the patients witout metadata
         try:
             if df.loc[patient, 'histology_tier1'] == 'ECTODERM':
                 all_ct_ECTODERM = all_ct_ECTODERM.add(ct, fill_value=0)
@@ -171,26 +219,25 @@ def deletion_frequency_per_chromosome():
         only_TRA = patient_breaks.loc[patient_breaks['svclass'] == 'TRA']
         ct_tra = pd.crosstab(only_TRA['#chrom1'], only_TRA['chrom2'])
         ct_tra.index = ct_tra.index.map(str)
-
         all_only_tra = all_only_tra.add(ct_tra, fill_value=0)
+        try:
+            if df.loc[patient, 'histology_tier1'] == 'ECTODERM':
+                all_tra_ECTODERM = all_tra_ECTODERM.add(ct_tra, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'ENDODERM':
+                all_tra_ENDODERM = all_tra_ENDODERM.add(ct_tra, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'NEURAL_CREST':
+                all_tra_NEURAL_CREST = all_tra_NEURAL_CREST.add(ct_tra, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'MESODERM':
+                all_tra_MESODERM = all_tra_MESODERM.add(ct_tra, fill_value=0)
+        except:
+            pass
 
-    import seaborn as sns
-    sns.set()
-    plt.figure(figsize=(15, 15))
+    plot_heatmap_traslocations(all_only_tra, 'all')
 
-    all_only_tra = all_only_tra.reindex(index=natsorted(all_only_tra.index))
-    all_only_tra = all_only_tra[chromosomes]
-    all_only_tra = all_only_tra.astype(int)
-    all_only_tra_sym = pd.DataFrame(data=np.maximum(all_only_tra.values, all_only_tra.values.transpose()),columns=chromosomes, index=chromosomes,)
-
-    all_only_tra_sym.to_csv('tra_sym.csv')
-
-    print(all_only_tra_sym)
-    g = sns.heatmap(all_only_tra_sym,annot=True,linewidths=.5,cbar=False,fmt='g')
-    g.set_yticklabels(g.get_yticklabels(), rotation=0)
-    g.set_xticklabels(g.get_xticklabels(), rotation=90)
-    plt.title('Traslocations per chromosome')
-    plt.show()
+    plot_heatmap_traslocations(all_tra_ECTODERM, 'ECTODERM')
+    plot_heatmap_traslocations(all_tra_ENDODERM, 'ENDODERM')
+    plot_heatmap_traslocations(all_tra_NEURAL_CREST, 'NEURAL_CREST')
+    plot_heatmap_traslocations(all_tra_MESODERM, 'MESODERM')
 
     # plt.figure(figsize=(20, 10))
     #

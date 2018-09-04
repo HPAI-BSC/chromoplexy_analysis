@@ -143,3 +143,89 @@ def generateEdges(list_of_pairs, vertex_labels, vertex_ranges):
         adjacency_mat[vertex_c1_idx][vertex_c2_idx] += 1
         adjacency_mat[vertex_c2_idx][vertex_c1_idx] += 1
     return adjacency_mat
+
+
+def generateTRAGraph(patient,datapath,output_path, connected_only=True):
+    '''
+    This function generates a graph per patient representing the traslocations of this patient.
+    vertex: Chromosome
+    edge: the number of traslocations between each chromosome
+
+    Input:
+        patient_path: string, the path where is the patient file
+    Output:
+        graph in networkx format
+    '''
+    import pandas as pd
+    from natsort import natsorted
+    import numpy as np
+    import networkx as nx
+    import pylab
+    from matplotlib import pyplot as plt
+    import gc
+
+    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+                   '19', '20', '21', '22', 'X', 'Y']
+    patient_path = datapath + patient
+    # Load the patient breaks, and select only the traslocations
+    patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
+    patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
+
+    only_TRA = patient_breaks.loc[patient_breaks['svclass'] == 'TRA']
+
+    # The crosstab is equivalent to the adjacency matrix, so we use this to calculate it
+    ct_tra = pd.crosstab(only_TRA['#chrom1'], only_TRA['chrom2'])
+
+    ct_tra.index = ct_tra.index.map(str)
+
+    aux = pd.DataFrame(0,columns=chromosomes, index=chromosomes)
+    aux.index = aux.index.map(str)
+
+    ct_tra = aux.add(ct_tra,fill_value=0)
+    aux = None
+    # Reorder
+    ct_tra = ct_tra.reindex(index=natsorted(ct_tra.index))
+    ct_tra = ct_tra[chromosomes]
+    # change the values to int
+    ct_tra = ct_tra.astype(int)
+
+    # Generate the adjacency matrix
+    adjacency_matrix = pd.DataFrame(data=np.maximum(ct_tra.values, ct_tra.values.transpose()),
+                                columns=chromosomes, index=chromosomes)
+    # print(adjacency_matrix)
+    graph = nx.from_pandas_adjacency(adjacency_matrix)
+    graph.to_undirected()
+    # Remove isolated vertices if requested
+    if connected_only:
+        graph.remove_nodes_from(list(nx.isolates(graph)))
+    pos = nx.spring_layout(graph)
+
+    print(nx.info(graph))
+    # version 2
+    plt.figure(figsize=(20,20))
+    nx.draw(graph, pos, with_labels=True)
+    # specifiy edge labels explicitly
+    edge_labels = dict([((u, v,), d['weight'])
+                        for u, v, d in graph.edges(data=True)])
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
+
+    # show graphs
+    plt.savefig(output_path + patient.replace('.vcf.tsv','.png') )
+    patient_breaks = None
+    graph = None
+    plt.close()
+    plt.clf()
+    gc.collect()
+
+
+
+def test():
+    import os
+    data_path = '../../data/raw_original_data/allfiles/'
+    # patient = '0b6cd7df-6970-4d60-b7b5-85002a7d8781.vcf.tsv'
+    output_path = '../../data_chromosome/graphs/'
+    for patient in os.listdir(data_path):
+        print(patient)
+        generateTRAGraph(patient,data_path, output_path)
+
+test()

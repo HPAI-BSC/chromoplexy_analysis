@@ -172,7 +172,7 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
                    '19', '20', '21', '22', 'X', 'Y']
     patient_path = data_path + patient
     # Load the patient breaks, and select only the traslocations
-    patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
+    patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
     patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
 
     only_TRA = patient_breaks.loc[patient_breaks['svclass'] == 'TRA']

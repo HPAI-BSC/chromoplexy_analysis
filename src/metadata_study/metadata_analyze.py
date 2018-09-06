@@ -32,23 +32,23 @@ from sklearn.preprocessing import Imputer
 
 sys.path.insert(1, '../../src')
 
-DATAPATH = '../../data_chromosome/'
+DATAPATH = '../../data_chromosome'
 
-METADATAPATH = DATAPATH + 'raw_original_data/data/metadatos_v2.0.txt'
+METADATAPATH = DATAPATH + '/raw_original_data/data/metadatos_v2.0.txt'
 
 
 try:
-    os.mkdir(DATAPATH + 'plots')
+    os.mkdir(DATAPATH + '/plots')
 except:
     pass
 
 try:
-    os.mkdir(DATAPATH + 'plots/tra_study')
+    os.mkdir(DATAPATH + '/plots/tra_study')
 except:
     pass
 
 try:
-    os.mkdir(DATAPATH + 'plots/data_analyisis')
+    os.mkdir(DATAPATH + '/plots/data_analyisis')
 except:
     pass
 
@@ -135,7 +135,7 @@ def plot_heatmap_traslocations(all_only_tra, name):
     g = sns.heatmap(all_only_tra, annot=True, linewidths=.5, cbar=False, fmt='g')
     g.set_yticklabels(g.get_yticklabels(), rotation=0)
     plt.title('Traslocations per chromosome of ' + name)
-    plt.savefig(DATAPATH + 'plots/tra_study/' + 'traslocations_' + name + '.png')
+    plt.savefig(DATAPATH + '/plots/tra_study/' + 'traslocations_' + name + '.png')
 
 
 def deletion_frequency_per_chromosome():
@@ -144,11 +144,12 @@ def deletion_frequency_per_chromosome():
     # Directory containing the files
     data_path = DATAPATH + '/raw_original_data/allfiles/'
     all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+    all_patients = [p.replace('.vcf.tsv','') for p in all_patients]
 
     df = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
 
     df = df.set_index('sampleID')
-
+    all_patients = [p for p in all_patients if p in list(df.index)]
     chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
                     '19', '20', '21', '22', 'X', 'Y']
 
@@ -191,7 +192,7 @@ def deletion_frequency_per_chromosome():
 
     for patient in all_patients:
 
-        patient_path = data_path + patient
+        patient_path = data_path + patient + '.vcf.tsv'
         # load patient breaks
         patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
         # load the chromosomes as strings

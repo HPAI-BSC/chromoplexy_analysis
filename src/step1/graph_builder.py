@@ -155,11 +155,12 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
         patient(string):  The patient file name.
         data_path(string): The path were the patient files are.
         output_path (string): The output path.
-        connected_only (Bool): If true, removes the isolated nodes from the graph.
+        connected_only (Bool): If true, removes the isolated nodes from the graph and returns the reduced adjacency matrix.
         plot_graph (Bool): If true, prints the graphs on the output path.
     Output:
         graph: networkx format
-        adjacency_matrix: Pandas dataframe
+        edge_list: List with the format:
+                    node1 node2 weight    (edge between node1 and node2 with weight weight)
     '''
     import pandas as pd
     from natsort import natsorted
@@ -170,7 +171,7 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
 
     chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
                    '19', '20', '21', '22', 'X', 'Y']
-    patient_path = data_path + patient
+    patient_path = data_path +'/raw_original_data/allfiles' + '/'+ patient + '.vcf.tsv'
     # Load the patient breaks, and select only the traslocations
     patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
     patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
@@ -181,6 +182,7 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
     ct_tra = pd.crosstab(only_TRA['#chrom1'], only_TRA['chrom2'])
 
     ct_tra.index = ct_tra.index.map(str)
+    adjacency_matrix_connected_only = ct_tra
 
     aux = pd.DataFrame(0,columns=chromosomes, index=chromosomes)
     aux.index = aux.index.map(str)
@@ -194,7 +196,7 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
     ct_tra = ct_tra.astype(int)
 
     # Generate the adjacency matrix
-    adjacency_matrix = pd.DataFrame(data=np.maximum(ct_tra.values, ct_tra.values.transpose()),
+    adjacency_matrix = pd.DataFrame(data=ct_tra.values,
                                 columns=chromosomes, index=chromosomes)
     # print(adjacency_matrix)
     graph = nx.from_pandas_adjacency(adjacency_matrix)
@@ -221,7 +223,8 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
         plt.close()
         plt.clf()
         gc.collect()
-    return graph, adjacency_matrix
+    edge_list = nx.generate_edgelist(graph,data=['weight'])
+    return edge_list, adjacency_matrix_connected_only
 
 
 

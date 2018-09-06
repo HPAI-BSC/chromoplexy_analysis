@@ -40,6 +40,15 @@ from scipy import stats
 
 DATAPATH = '../../data_chromosome'
 
+try: os.mkdir(DATAPATH + '/plots')
+except: pass
+try: os.mkdir(DATAPATH + '/plots/confusion_matrix')
+except: pass
+try: os.mkdir(DATAPATH + '/datasets/clean')
+except: pass
+try: os.mkdir(DATAPATH + '/plots/trees')
+except: pass
+
 
 def compare_dummy_classifiers(X_train, y_train, X_test, y_test):
     names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
@@ -110,9 +119,9 @@ def compare_complex_classifiers(X_train, y_train, X_test, y_test, name):
     # Random forest
 
     param_dist = {"max_depth": [3, None],
-                  "max_features": stats.randint(1, 11),
-                  "min_samples_split": stats.randint(2, 11),
-                  "min_samples_leaf": stats.randint(1, 11),
+                  "max_features": stats.randint(1, 20),
+                  "min_samples_split": stats.randint(2, 20),
+                  "min_samples_leaf": stats.randint(1, 20),
                   "bootstrap": [True, False],
                   "criterion": ["gini", "entropy"]}
 
@@ -192,26 +201,27 @@ def plot_confusion_matrix(cm, classes,
     plt.savefig(plot_path + title + name + '.png')
 
 
-def only_random_forest(X_train, y_train, X_test, y_test, name):
+def only_random_forest(X_train, y_train, X_test, y_test, name, path):
     # Random forest
-    n_iter_search = 30
+    n_iter_search = 50
     # f = open('../../data/best_params' + 'random_forest' + name + '.txt', 'w')
-    param_dist = {"max_depth": stats.randint(1, 11),
+    param_dist = {"max_depth": [4],
                   "min_samples_split": stats.randint(2, 11),
-                  "min_samples_leaf": stats.randint(1, 11),
+                  "min_samples_leaf": stats.randint(1, 20),
                   "bootstrap": [True, False],
+                  "max_features":[20,50,100,150,200,'auto','log2',None],
                   # "oob_score": [True, False],
                   "criterion": ["gini", "entropy"]}
 
-    clf = RandomForestClassifier(n_estimators=30)
+    clf = RandomForestClassifier(n_estimators=50)
 
-    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,iid=False,
                                        n_iter=n_iter_search, pre_dispatch=3, n_jobs=-1)
 
     random_search.fit(X_train, y_train.values.ravel())
 
     best_params = random_search.best_params_
-    best_params['n_estimators'] = 30
+    best_params['n_estimators'] = 50
 
     random_forest = RandomForestClassifier(**best_params)
 
@@ -233,7 +243,7 @@ def only_random_forest(X_train, y_train, X_test, y_test, name):
 
         # Show graph
         graph.create_png()
-        graph.write_png(name + str(i) + ".png")
+        graph.write_png(path +'/'+ name  + ".png")
         i+=1
 
     feature_importances = pd.DataFrame(random_forest.feature_importances_,
@@ -257,9 +267,9 @@ def only_random_forest(X_train, y_train, X_test, y_test, name):
     plot_confusion_matrix(cnf_matrix, classes=class_names,
                           title='Confusion matrix, without normalization', name=name)
 
-    # # Plot normalized confusion matrix
-    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-    #                       title='Normalized confusion matrix', name=name)
+    # Plot normalized confusion matrix
+    plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+                          title='Normalized confusion matrix', name=name)
 
 
 
@@ -295,6 +305,8 @@ def nan_imputing(df):
     fancy_imputed['donor_age_at_diagnosis'] = fancy_imputed['donor_age_at_diagnosis'].astype(np.int)
     return fancy_imputed
 
+
+
 def test_with_some_datasets_only_graphs(dataset_files):
     for dataset_file in dataset_files:
         path = DATAPATH + '/datasets/' + dataset_file
@@ -304,8 +316,8 @@ def test_with_some_datasets_only_graphs(dataset_files):
                 df = pd.read_csv(path)
                 y = df.pop('histology_tier1')
 
-                # [ 'donor_age_at_diagnosis', 'donor_sex']
-                X = df.drop(['Unnamed: 0', 'histology_tier2','donor_age_at_diagnosis','donor_sex','tumor_stage1','tumor_stage2','number_of_breaks'], axis=1)
+                X = df.drop(['Unnamed: 0', 'histology_tier2','donor_age_at_diagnosis','donor_sex','tumor_stage1','tumor_stage2'], axis=1)
+
                 for column in X.columns:
                     if 'chr' in column:
                         X = X.drop(column,axis=1)
@@ -319,16 +331,21 @@ def test_with_some_datasets_only_graphs(dataset_files):
                         X = X.drop(column, axis=1)
                     if 't2tINV' in column:
                         X = X.drop(column, axis=1)
-
+                    if 'number_of_breaks' in column:
+                        X = X.drop(column, axis=1)
                 X_train, X_test, Y_train, Y_test = \
-                    train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
+                    train_test_split(X, y,stratify=y, test_size=.2, random_state=42)
                 print 'Dataset', dataset_file
-                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file)
+                scaler = MinMaxScaler()
+                # X_train[X_train.columns] = scaler.fit_transform(X_train[X_train.columns])
+                # X_test[X_test.columns] = scaler.fit_transform(X_test[X_test.columns])
+                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file,path= DATAPATH + '/plots/trees')
                 X_train['histology_tier1'] = Y_train
                 X_test['histology_tier1'] = Y_test
                 X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file + '_clean.csv')
-            except:
-                pass
+            except Exception as e:
+                print(dataset_file)
+                print(e)
 
 
 def test_with_some_datasets(dataset_files):
@@ -340,7 +357,7 @@ def test_with_some_datasets(dataset_files):
                 y = df.pop('histology_tier1')
                 X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
                 X_train, X_test, Y_train, Y_test = \
-                    train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2, random_state=42)
+                    train_test_split(pd.get_dummies(X), y,stratify=y, test_size=.2)
                 X_train = nan_imputing(X_train)
                 X_test = nan_imputing(X_test)
                 X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + X_train['t2tINV']
@@ -363,15 +380,14 @@ def test_with_some_datasets(dataset_files):
                                                                           np.float32(X_test[['number_of_breaks']]))
 
                 print 'Dataset', dataset_file
-                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file+'_meta')
+                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file.replace('.csv', '_meta.csv'), path= DATAPATH + '/plots/trees')
 
                 X_train['histology_tier1'] = Y_train
                 X_test['histology_tier1'] = Y_test
-                X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file + '_clean_meta.csv')
+                X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file.replace('.csv','_clean_meta.csv') )
         except Exception as e:
             print(dataset_file)
             print(e)
-            print(dataset_file, 'does not exist')
 
 
 def main():

@@ -47,6 +47,7 @@ warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 from step1.main_graph_printer import plot_one_file
+from step1.graph_builder import generateTRAGraph
 from step2.main_gspan_subgraph_generator import generate_one_patient_graph
 
 from datetime import timedelta
@@ -262,7 +263,7 @@ from gspan_mining.config import parser
 from gspan_mining.gspan import gSpan
 
 
-def generate_subgraphs_one_core(gspan_file_name, s,data_path, gspan_data_folder, l=2, plot=False):
+def generate_subgraphs_one_core(gspan_file_name, s, data_path, gspan_data_folder, l=2, plot=False):
     filepath = data_path + gspan_data_folder + gspan_file_name + '.txt'
     args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' -u 4 -v False ' + '-p ' + str(plot) + ' ' + filepath
     FLAGS, _ = parser.parse_known_args(args=args_str.split())
@@ -297,11 +298,13 @@ def process_patient(patient_id, max_distance, min_support, data_path, gspan_data
         plot_one_file(patient_id)
 
     if not os.path.isfile(data_path + gspan_data_folder + patient_id + '.txt'):
-        generate_one_patient_graph(patient_id, max_distance,general_data_path=data_path, gspan_path=gspan_data_folder, with_vertex_weight=False,
+        generate_one_patient_graph(patient_id, max_distance, general_data_path=data_path, gspan_path=gspan_data_folder,
+                                   with_vertex_weight=False,
                                    with_vertex_chromosome=False,
                                    with_edge_weight=False)
     try:
-        report = generate_subgraphs_one_core(patient_id, s=min_support, data_path=data_path, gspan_data_folder=gspan_data_folder)
+        report = generate_subgraphs_one_core(patient_id, s=min_support, data_path=data_path,
+                                             gspan_data_folder=gspan_data_folder)
 
         patient = Patient_instance(patient_id)
 
@@ -325,7 +328,7 @@ def process_patient(patient_id, max_distance, min_support, data_path, gspan_data
     return subgraphs, patient
 
 
-def process_list_of_patients(patients, max_distance, min_support, data_path, gspan_data_folder, processed_path, ):
+def process_list_of_patients(patients, max_distance, min_support, data_path, gspan_data_folder, processed_path):
     data = Data()
     print 'number of patients: ', len(patients)
     f = open(processed_path, 'w')
@@ -352,7 +355,7 @@ def process_list_of_patients(patients, max_distance, min_support, data_path, gsp
     return file_path
 
 
-def generate_dataset(path, data_path,min_graphs, name='classification_csv'):
+def generate_dataset_gspan(path, data_path, min_graphs, name='classification_csv'):
     """
     This function generates a dataset using the subgraphs of the patients and the metadata.
     :param path:
@@ -397,7 +400,8 @@ def generate_dataset(path, data_path,min_graphs, name='classification_csv'):
             pass
 
     # I'll try to add chromosome relative information.
-    chromosomes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 'X', 'Y']
+    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+                   '19', '20', '21', '22', 'X', 'Y']
     graphs_dataset['number_of_breaks'] = 0
 
     svclass = ['DUP', 'DEL', 'TRA', 'h2hINV', 't2tINV']
@@ -410,7 +414,7 @@ def generate_dataset(path, data_path,min_graphs, name='classification_csv'):
 
     for patient in graphs_dataset.index:
         patient_path = data_path + '/raw_original_data/allfiles/' + patient + '.vcf.tsv'
-        patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
+        patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
         # print(patient_breaks.columns, patient_breaks.shape)
 
         number_of_breaks = len(patient_breaks)
@@ -440,7 +444,81 @@ def generate_dataset(path, data_path,min_graphs, name='classification_csv'):
     print('Csv generated')
 
 
-def main():
+def generate_dataset(patients, data_path, output_path, name='classification_dataset.csv'):
+    print('Generating csv..')
+    metadata = pd.read_csv(data_path + '/raw_original_data/metadatos_v2.0.csv')
+    metadata = metadata.set_index('sampleID')
+    # Remove the patients that doesn't have metadata
+    l = len(patients)
+    patients = [p for p in patients if p in list(metadata.index)]
+    print('There are ', l-len(patients) , 'patients that do not appear in metadata')
+    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+                   '19', '20', '21', '22', 'X', 'Y']
+    svclass = ['DUP', 'DEL', 'TRA', 'h2hINV', 't2tINV']
+    graph_columns = ['(' + chromosomes[i] + ',' + chromosomes[j] + ')' for i in range(len(chromosomes))
+                                     for j in range(len(chromosomes)) if i < j]
+
+    all_columns = np.append(metadata.columns, graph_columns).flatten()
+
+    # initialize the dataset and append the metadata to it
+    dataset = pd.DataFrame(columns=all_columns)
+    dataset = pd.concat([dataset, metadata])
+    # initialize the graph related columns
+    dataset.loc[:, graph_columns] = 0
+
+    i = 0
+    for patient in patients:
+
+        edge_list, matrix = generateTRAGraph(patient=patient, data_path=data_path, output_path='', connected_only=True, plot_graph=False)
+        # print matrix
+        # print [e for e in edge_list]
+        for edge in edge_list:
+            edge = edge.split(' ')
+            if edge[0]  in ['X', 'Y'] and edge[1] in ['X','Y']:
+                edge_column = '(' + 'X' + ',' + 'Y' + ')'
+            elif edge[0] in ['X', 'Y']:
+                print(edge)
+                edge_column = '(' + edge[1] + ',' + edge[0] + ')'
+            elif edge[1] in ['X', 'Y']:
+                edge_column = '(' + edge[0] + ',' + edge[1] + ')'
+            elif int(edge[0]) < int(edge[1]):
+                edge_column = '(' + edge[0] + ',' + edge[1] + ')'
+            else:
+                edge_column = '(' + edge[1] + ',' + edge[0] + ')'
+            edge_weight = int(edge[2])
+            # print edge, edge_column, edge_weight
+            dataset.loc[patient, edge_column] = edge_weight
+        i += 1
+    for chrom in chromosomes:
+        dataset['chr_' + str(chrom)] = 0
+
+    for cls in svclass:
+        dataset[cls] = 0
+
+    for patient in dataset.index:
+        patient_path = data_path + '/raw_original_data/allfiles/' + patient + '.vcf.tsv'
+        patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
+        # print(patient_breaks.columns, patient_breaks.shape)
+
+        number_of_breaks = len(patient_breaks)
+        dataset.loc[patient, 'number_of_breaks'] = number_of_breaks
+
+        contained_chromosomes = patient_breaks[['#chrom1', 'chrom2']].apply(pd.Series.value_counts)
+        contained_chromosomes = contained_chromosomes.fillna(0)
+        contained_chromosomes[['#chrom1', 'chrom2']] = contained_chromosomes[['#chrom1', 'chrom2']].astype(int)
+        contained_chromosomes['chromosome'] = contained_chromosomes.index
+        contained_chromosomes['count'] = contained_chromosomes['#chrom1'] + contained_chromosomes['chrom2']
+        for chrom in contained_chromosomes.index:
+            dataset.loc[patient, ['chr_' + str(chrom)]] = contained_chromosomes.loc[chrom, ['count']].values[0]
+
+        count_svclass = patient_breaks[['svclass', ]].apply(pd.Series.value_counts)
+        for svclass in count_svclass.index:
+            dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
+
+    dataset.to_csv(output_path +'/'+ name)
+
+
+def main_gspan():
     # This variables are global to simplify testing the code, will be removed later:
     NUMBER_OF_SAMPLES = -1
 
@@ -448,7 +526,7 @@ def main():
 
     MAX_DISTANCE = 2000
 
-    supports = [1,]# 0.9, 0.8]
+    supports = [1, ]  # 0.9, 0.8]
 
     time_per_support = {}
     for support in supports:
@@ -483,7 +561,7 @@ def main():
         name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(
             MAX_DISTANCE) + '_nan'
 
-        generate_dataset(path=file_path, data_path=DATAPATH,min_graphs=MIN_GRAPHS, name=name)
+        generate_dataset_gspan(path=file_path, data_path=DATAPATH, min_graphs=MIN_GRAPHS, name=name)
 
         end_time = timedelta(seconds=time.time() - init)
         time_per_support[support] = end_time
@@ -491,6 +569,24 @@ def main():
     for key in time_per_support.keys():
         print 'support:', key
         print 'time:', time_per_support[key]
+
+
+def main():
+    NUMBER_OF_SAMPLES = -1
+    # Data paths:
+    DATA_PATH = '../../data_chromosome'
+    OUTPUT_PATH = DATA_PATH + '/datasets'
+    try: os.mkdir(DATA_PATH)
+    except: pass
+    try: os.mkdir(OUTPUT_PATH)
+    except: pass
+
+    # Directory containing the files
+    data_path = DATA_PATH + '/raw_original_data/allfiles'
+    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+    all_patients = [p.replace('.vcf.tsv','') for p in all_patients]
+    name = 'dataset_' + str(NUMBER_OF_SAMPLES) + '_chrom.csv'
+    generate_dataset(patients=all_patients, data_path=DATA_PATH, output_path=OUTPUT_PATH, name=name)
 
 
 if __name__ == '__main__':

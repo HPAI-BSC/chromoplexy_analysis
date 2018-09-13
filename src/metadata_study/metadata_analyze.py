@@ -36,7 +36,6 @@ DATAPATH = '../../data_chromosome'
 
 METADATAPATH = DATAPATH + '/raw_original_data/data/metadatos_v2.0.txt'
 
-
 try:
     os.mkdir(DATAPATH + '/plots')
 except:
@@ -51,6 +50,7 @@ try:
     os.mkdir(DATAPATH + '/plots/data_analyisis')
 except:
     pass
+
 
 def generate_csv():
     """
@@ -117,6 +117,7 @@ def study_donor_age_vs_histology():
 
 from natsort import natsorted
 
+
 def plot_heatmap_traslocations(all_only_tra, name):
     import seaborn as sns
     sns.set()
@@ -138,20 +139,20 @@ def plot_heatmap_traslocations(all_only_tra, name):
     plt.savefig(DATAPATH + '/plots/tra_study/' + 'traslocations_' + name + '.png')
 
 
-def deletion_frequency_per_chromosome():
+def traslocations_frequency_per_chromosome():
     NUMBER_OF_SAMPLES = -1
 
     # Directory containing the files
     data_path = DATAPATH + '/raw_original_data/allfiles/'
     all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
-    all_patients = [p.replace('.vcf.tsv','') for p in all_patients]
+    all_patients = [p.replace('.vcf.tsv', '') for p in all_patients]
 
     df = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
 
     df = df.set_index('sampleID')
     all_patients = [p for p in all_patients if p in list(df.index)]
     chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
-                    '19', '20', '21', '22', 'X', 'Y']
+                   '19', '20', '21', '22', 'X', 'Y']
 
     all_ct = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
                           index=chromosomes)
@@ -165,14 +166,12 @@ def deletion_frequency_per_chromosome():
     all_ct_MESODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
                                    index=chromosomes)
 
-    all_only_tra = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
+    all_only_tra = pd.DataFrame(0, columns=chromosomes, index=chromosomes, )
 
-    all_tra_ECTODERM = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
-    all_tra_ENDODERM = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
-    all_tra_NEURAL_CREST = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
-    all_tra_MESODERM = pd.DataFrame(0,columns=chromosomes, index=chromosomes,)
-
-
+    all_tra_ECTODERM = pd.DataFrame(0, columns=chromosomes, index=chromosomes, )
+    all_tra_ENDODERM = pd.DataFrame(0, columns=chromosomes, index=chromosomes, )
+    all_tra_NEURAL_CREST = pd.DataFrame(0, columns=chromosomes, index=chromosomes, )
+    all_tra_MESODERM = pd.DataFrame(0, columns=chromosomes, index=chromosomes, )
 
     all_ct.index = all_ct.index.map(str)
 
@@ -186,7 +185,6 @@ def deletion_frequency_per_chromosome():
     all_tra_ENDODERM.index = all_tra_ENDODERM.index.map(str)
     all_tra_NEURAL_CREST.index = all_tra_NEURAL_CREST.index.map(str)
     all_tra_MESODERM.index = all_tra_MESODERM.index.map(str)
-
 
     all_ct = all_ct.reindex(index=natsorted(all_ct.index))
 
@@ -202,7 +200,7 @@ def deletion_frequency_per_chromosome():
         ct.index = ct.index.map(str)
 
         all_ct = all_ct.add(ct, fill_value=0)
-        patient = patient.replace('.vcf.tsv','')
+        patient = patient.replace('.vcf.tsv', '')
         # Ignore the patients witout metadata
         try:
             if df.loc[patient, 'histology_tier1'] == 'ECTODERM':
@@ -240,29 +238,131 @@ def deletion_frequency_per_chromosome():
     plot_heatmap_traslocations(all_tra_NEURAL_CREST, 'NEURAL_CREST')
     plot_heatmap_traslocations(all_tra_MESODERM, 'MESODERM')
 
-    # plt.figure(figsize=(20, 10))
-    #
-    # values = all_ct['DEL'].values
-    #
-    # all_ct = all_ct.reindex(index=natsorted(all_ct.index))
-    # plt.bar(all_ct.index, all_ct['TRA'])
-    #
-    # # all_ct_ECTODERM = all_ct_ECTODERM.reindex(index=natsorted(all_ct_ECTODERM.index)).fillna(0)
-    # # all_ct_ENDODERM = all_ct_ENDODERM.reindex(index=natsorted(all_ct_ENDODERM.index)).fillna(0)
-    # # all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.reindex(index=natsorted(all_ct_NEURAL_CREST.index)).fillna(0)
-    # # all_ct_MESODERM = all_ct_MESODERM.reindex(index=natsorted(all_ct_MESODERM.index)).fillna(0)
-    # # print all_ct
-    # # ax = plt.subplot()
-    # # # plt.bar(all_ct.index, all_ct['DEL'])
-    # # ax.bar(all_ct_ECTODERM.index, all_ct_ECTODERM['DEL'],label='ECTODERM')
-    # # ax.bar(all_ct_ENDODERM.index, all_ct_ENDODERM['DEL'], label='ENDODERM')
-    # # ax.bar(all_ct_NEURAL_CREST.index, all_ct_NEURAL_CREST['DEL'],label='NEURAL_CREST')
-    # # ax.bar(all_ct_MESODERM.index, all_ct_MESODERM['DEL'], label='MESODERM')
-    # # print(all_ct_ECTODERM)
-    # # plt.xticks(range(len(D)), list(D.keys()), rotation=30)
-    # plt.title('Frecuency of Deletions')
-    # plt.legend()
-    # plt.show()
+    # all_ct_ECTODERM = all_ct_ECTODERM.reindex(index=natsorted(all_ct_ECTODERM.index)).fillna(0)
+    # all_ct_ENDODERM = all_ct_ENDODERM.reindex(index=natsorted(all_ct_ENDODERM.index)).fillna(0)
+    # all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.reindex(index=natsorted(all_ct_NEURAL_CREST.index)).fillna(0)
+    # all_ct_MESODERM = all_ct_MESODERM.reindex(index=natsorted(all_ct_MESODERM.index)).fillna(0)
+    # print all_ct
+    # ax = plt.subplot()
+    # # plt.bar(all_ct.index, all_ct['DEL'])
+    # ax.bar(all_ct_ECTODERM.index, all_ct_ECTODERM['DEL'],label='ECTODERM')
+    # ax.bar(all_ct_ENDODERM.index, all_ct_ENDODERM['DEL'], label='ENDODERM')
+    # ax.bar(all_ct_NEURAL_CREST.index, all_ct_NEURAL_CREST['DEL'],label='NEURAL_CREST')
+    # ax.bar(all_ct_MESODERM.index, all_ct_MESODERM['DEL'], label='MESODERM')
+    # print(all_ct_ECTODERM)
+    # plt.xticks(range(len(D)), list(D.keys()), rotation=30)
+
+
+def deletions_per_chromosome():
+    NUMBER_OF_SAMPLES = -1
+
+    # Directory containing the files
+    data_path = DATAPATH + '/raw_original_data/allfiles/'
+    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+    all_patients = [p.replace('.vcf.tsv', '') for p in all_patients]
+
+    df = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
+
+    df = df.set_index('sampleID')
+    all_patients = [p for p in all_patients if p in list(df.index)]
+    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+                   '19', '20', '21', '22', 'X', 'Y']
+
+    all_ct = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                          index=chromosomes)
+    all_ct_ECTODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                   index=chromosomes)
+    all_ct_ENDODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                   index=chromosomes)
+    all_ct_NEURAL_CREST = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                       index=chromosomes)
+    all_ct_MESODERM = pd.DataFrame(columns=['DEL', 'DUP', 'TRA', 'h2hINV', 't2tINV'],
+                                   index=chromosomes)
+
+    all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+
+    for patient in all_patients:
+
+        patient_path = data_path + patient + '.vcf.tsv'
+        # load patient breaks
+        patient_breaks = pd.DataFrame.from_csv(patient_path, sep='\t', index_col=None)
+        # load the chromosomes as strings
+        patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
+        # generate a crosstab of the svclass with the chromosomes
+        ct = pd.crosstab(patient_breaks['chrom2'], patient_breaks['svclass'])
+        ct.index = ct.index.map(str)
+
+        all_ct = all_ct.add(ct, fill_value=0)
+        patient = patient.replace('.vcf.tsv', '')
+        # Ignore the patients witout metadata
+        try:
+            if df.loc[patient, 'histology_tier1'] == 'ECTODERM':
+                all_ct_ECTODERM = all_ct_ECTODERM.add(ct, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'ENDODERM':
+                all_ct_ENDODERM = all_ct_ENDODERM.add(ct, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'NEURAL_CREST':
+                all_ct_NEURAL_CREST = all_ct_NEURAL_CREST.add(ct, fill_value=0)
+            if df.loc[patient, 'histology_tier1'] == 'MESODERM':
+                all_ct_MESODERM = all_ct_MESODERM.add(ct, fill_value=0)
+        except:
+            pass
+    plt.figure(figsize=(20, 10))
+    total =np.add( np.add(np.add(np.array(all_ct_ECTODERM['DEL']), np.array(all_ct_ENDODERM['DEL'])),
+        all_ct_NEURAL_CREST['DEL']), all_ct_MESODERM['DEL'])
+    plt.bar(all_ct_ECTODERM.index, np.divide(all_ct_ECTODERM['DEL'], total), label='ECTODERM')
+    plt.bar(all_ct_ENDODERM.index, np.divide(all_ct_ENDODERM['DEL'], total),
+            bottom=np.divide(all_ct_ECTODERM['DEL'], total), label='ENDODERM')
+    plt.bar(all_ct_NEURAL_CREST.index, np.divide(all_ct_NEURAL_CREST['DEL'], total),
+            bottom=np.divide(all_ct_ECTODERM['DEL'], total) + np.divide(all_ct_ENDODERM['DEL'], total),
+            label='NEURAL_CREST')
+    plt.bar(all_ct_MESODERM.index, np.divide(all_ct_MESODERM['DEL'], total),
+            bottom=np.divide(all_ct_ECTODERM['DEL'], total) + np.divide(all_ct_ENDODERM['DEL'], total) + np.divide(
+                all_ct_NEURAL_CREST['DEL'], total), label='MESODERM')
+
+    plt.title('Deletions per chromosome per histology')
+    plt.legend()
+    plt.savefig(DATAPATH + '/plots/' +'deletions_per_histology.png')
+    plt.close()
+
+
+    plt.figure(figsize=(20, 10))
+    total =np.add( np.add(np.add(np.array(all_ct_ECTODERM['DUP']), np.array(all_ct_ENDODERM['DUP'])),
+        all_ct_NEURAL_CREST['DUP']), all_ct_MESODERM['DUP'])
+    plt.bar(all_ct_ECTODERM.index, np.divide(all_ct_ECTODERM['DUP'], total), label='ECTODERM')
+    plt.bar(all_ct_ENDODERM.index, np.divide(all_ct_ENDODERM['DUP'], total),
+            bottom=np.divide(all_ct_ECTODERM['DUP'], total), label='ENDODERM')
+    plt.bar(all_ct_NEURAL_CREST.index, np.divide(all_ct_NEURAL_CREST['DEL'], total),
+            bottom=np.divide(all_ct_ECTODERM['DUP'], total) + np.divide(all_ct_ENDODERM['DUP'], total),
+            label='NEURAL_CREST')
+    plt.bar(all_ct_MESODERM.index, np.divide(all_ct_MESODERM['DUP'], total),
+            bottom=np.divide(all_ct_ECTODERM['DUP'], total) + np.divide(all_ct_ENDODERM['DUP'], total) + np.divide(
+                all_ct_NEURAL_CREST['DUP'], total), label='MESODERM')
+
+    plt.title('Duplications per chromosome per histology')
+    plt.legend()
+    plt.savefig(DATAPATH + '/plots/' +'duplications_per_histology.png')
+    plt.close()
+
+
+    plt.figure(figsize=(20, 10))
+
+    all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+    print(all_ct)
+
+    plt.bar(all_ct.index, all_ct['DEL'])
+    plt.title('Deletions per chromosome')
+    plt.legend()
+    plt.savefig(DATAPATH + '/plots/' + 'total_deletions.png')
+    plt.close()
+
+    plt.figure(figsize=(20, 10))
+
+    all_ct = all_ct.reindex(index=natsorted(all_ct.index))
+    plt.bar(all_ct.index, all_ct['DUP'])
+    plt.title('Duplications per chromosome')
+    plt.legend()
+    plt.savefig(DATAPATH + '/plots/' +'total_duplications.png')
+    plt.close()
 
 
 def nan_imputing(df):
@@ -349,7 +449,7 @@ def main():
     # data = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
     # clean = nan_imputing(data)
     # clean = pd.read_csv('../../data/datasets/classification_dataset_-1_0.7_2000.csv')
-    deletion_frequency_per_chromosome()
+    deletions_per_chromosome()
     # describe(clean)
     # study_donor_age_vs_histology()
 

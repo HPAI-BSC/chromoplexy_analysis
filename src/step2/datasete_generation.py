@@ -468,8 +468,7 @@ def generate_dataset(patients, data_path, output_path, name='classification_data
 
     i = 0
     for patient in patients:
-
-        edge_list, matrix = generateTRAGraph(patient=patient, data_path=data_path, output_path='', connected_only=True, plot_graph=False)
+        g, edge_list, matrix = generateTRAGraph(patient=patient, data_path=data_path, output_path='', connected_only=True, plot_graph=False)
         # print matrix
         # print [e for e in edge_list]
         for edge in edge_list:
@@ -489,28 +488,49 @@ def generate_dataset(patients, data_path, output_path, name='classification_data
             # print edge, edge_column, edge_weight
             dataset.loc[patient, edge_column] = edge_weight
         i += 1
+    # initialize the chromosome columns at 0
     for chrom in chromosomes:
         dataset['chr_' + str(chrom)] = 0
+        dataset['DEL_' + str(chrom)] = 0
+        dataset['DUP_' + str(chrom)] = 0
 
+    # initialize the svclass columns at 0
     for cls in svclass:
         dataset[cls] = 0
 
+    # for all patients on the dataset load its breaks and extract their data
     for patient in dataset.index:
         patient_path = data_path + '/raw_original_data/allfiles/' + patient + '.vcf.tsv'
         patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
-        # print(patient_breaks.columns, patient_breaks.shape)
+
+        # load the chromosomes as strings
+        patient_breaks['chrom2'] = patient_breaks['chrom2'].map(str)
+        # generate a crosstab of the svclass with the chromosomes
+        ct = pd.crosstab(patient_breaks['chrom2'], patient_breaks['svclass'])
+        ct.index = ct.index.map(str)
+        # print(ct)
+        for chrom in chromosomes:
+            if chrom in ct.index:
+                if 'DEL' in ct.columns:
+                    dataset.loc[patient, ['DEL_' + str(chrom)]] = ct.loc[chrom, ['DEL']].values[0]
+                if 'DUP' in ct.columns:
+                    dataset.loc[patient, ['DUP_' + str(chrom)]] = ct.loc[chrom, ['DUP']].values[0]
+
 
         number_of_breaks = len(patient_breaks)
         dataset.loc[patient, 'number_of_breaks'] = number_of_breaks
 
+        # I count how many times appears on the breaks each of the chromosomes.
         contained_chromosomes = patient_breaks[['#chrom1', 'chrom2']].apply(pd.Series.value_counts)
         contained_chromosomes = contained_chromosomes.fillna(0)
         contained_chromosomes[['#chrom1', 'chrom2']] = contained_chromosomes[['#chrom1', 'chrom2']].astype(int)
         contained_chromosomes['chromosome'] = contained_chromosomes.index
         contained_chromosomes['count'] = contained_chromosomes['#chrom1'] + contained_chromosomes['chrom2']
+        # Then saves it on the chromosome feature.
         for chrom in contained_chromosomes.index:
             dataset.loc[patient, ['chr_' + str(chrom)]] = contained_chromosomes.loc[chrom, ['count']].values[0]
 
+        # Counts how many breaks of each class there are on the breaks and saves it.
         count_svclass = patient_breaks[['svclass', ]].apply(pd.Series.value_counts)
         for svclass in count_svclass.index:
             dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]

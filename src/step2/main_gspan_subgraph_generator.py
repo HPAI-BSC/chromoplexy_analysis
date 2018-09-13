@@ -10,7 +10,7 @@ import sys
 sys.path.insert(1, '../src')
 
 from step1.loader import load_breaks
-from step1.graph_builder import generateGraph
+from step1.graph_builder import generateGraph, generateTRAGraph
 from step1.graphnx import generateNXGraph
 
 import networkx as nx
@@ -122,8 +122,6 @@ def generate_one_patient_graph(filename, max_distance,general_data_path, gspan_p
                     map_nodes[v] = count
                     if with_vertex_weight:
                         weight = g.nodes[v]['weights']
-                    elif with_vertex_chromosome:
-                        weight = g.nodes[v]['chromosome']
                     else:
                         weight = 2
                     f.write('v ' + str(map_nodes[v]) + ' ' + str(weight) + '\n')
@@ -136,6 +134,44 @@ def generate_one_patient_graph(filename, max_distance,general_data_path, gspan_p
                         weight = 2
                     f.write('e ' + str(map_nodes[edge[0]]) + ' ' + str(map_nodes[edge[1]]) + ' ' + str(weight) + '\n')
 
+
+def get_traslocation_graph(filename, general_data_path, gspan_path='/traslocations_gspan_format/'):
+    """
+    This function generates a file with the traslocation graph of the given file in gspan format.
+    :param filename:
+    :param general_data_path:
+    :param gspan_path:
+    :return:
+    """
+    subgraphs = []
+    # Directory containing the files
+    data_path = general_data_path + '/raw_original_data/allfiles'
+    # Iterate over the files
+    count = 0
+    patient = filename.replace('.vcf.tsv.','')
+
+    breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename),only_tra=True)
+    if len(breaks) == 0:
+        print 'WARNING: Empty data file',filename
+        return
+    # adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,
+    #                                                                                max_distance)
+
+    g, edge_list, adjacency_matrix_connected_only = generateTRAGraph(patient, general_data_path, connected_only=True, plot_graph=False)
+    candidates = list(nx.connected_component_subgraphs(g))
+    for c in candidates:
+        if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:
+            subgraphs.append(c)
+            count += 1
+    print(g.)
+    # store
+    try:
+        os.mkdir(general_data_path + gspan_path)
+    except:
+        pass
+
+    with open(general_data_path + gspan_path + filename + '.txt', 'w') as f:
+        pass
 
 def main():
     if len(sys.argv) != 2:

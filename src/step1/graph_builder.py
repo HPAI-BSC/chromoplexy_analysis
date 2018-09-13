@@ -207,7 +207,7 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
 
     if plot_graph:
         pos = nx.spring_layout(graph)
-        print(nx.info(graph))
+        # print(nx.info(graph))
         # version 2
         plt.figure(figsize=(20,20))
         nx.draw(graph, pos, with_labels=True)
@@ -224,7 +224,7 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
         plt.clf()
         gc.collect()
     edge_list = nx.generate_edgelist(graph,data=['weight'])
-    return edge_list, adjacency_matrix_connected_only
+    return graph, edge_list, adjacency_matrix_connected_only
 
 
 

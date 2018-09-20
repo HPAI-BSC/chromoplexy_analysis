@@ -48,145 +48,14 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 from step1.main_graph_printer import plot_one_file
 from step1.graph_builder import generateTRAGraph
-from step2.main_gspan_subgraph_generator import generate_one_patient_graph
 
 from datetime import timedelta
 import time
 import numpy as np
-import pickle
 import pandas as pd
 import shlex
+import networkx as nx
 
-
-class Subgraph_instance(object):
-    """
-    This is the class that saves the subgraph data.
-    .
-    """
-
-    def __init__(self, description=''):
-        """
-        Atributes:
-            id: int
-            description: string  ('v 0 1 v 2 8 e 0 2 ')
-            patients: array(string)
-            support: int  (This variable is the global support of the graph, i.e. respect all the patients)
-        """
-        self.id = 0
-        self.description = description
-        self.patients = np.array([])
-        self.support = 0
-
-    def add_patients(self, new_patients):
-        self.patients = np.append(self.patients, new_patients)
-
-    def add_support(self, new_support):
-        self.support += new_support
-
-    def print_subgraph(self):
-        print 'id: ', self.id
-        print 'description: ', self.description
-        print 'support: ', self.support
-        # print 'patients: ', self.patients
-
-
-class Patient_instance(object):
-    """
-        This is the class that saves the subgraph data.
-        .
-        """
-
-    def __init__(self, id):
-        """
-        Atributes:
-            id: string
-            graphs: dict(description(string):support(int))
-        """
-        self.id = id.replace('.vcf.tsv', '')
-        self.graphs = {}
-
-    def add_graph(self, new_graph_description, new_graph_support):
-        self.graphs[new_graph_description] = new_graph_support
-
-    def print_patient(self):
-        print 'id: ', self.id
-        print 'graphs: ', self.graphs
-
-
-class Data(object):
-    """
-    This is the data i'll use to generate the features.
-    """
-
-    def __init__(self):
-        """
-        Atributes:
-            all_subgraphs: array(Graph_instance)
-            existing_subgraphs = key: description value: id
-            patients = array(Patient_Instance)
-        """
-        self.all_subgraphs = []
-        self.existing_subgraphs = {}
-        self.patients = []
-
-    def add_subgraph(self, new_graph):
-        """
-        I add the new graph to the dataset or actualize it if the graph is already there.
-        :param new_graph: Graph_instance
-        :return:
-        """
-        if new_graph.description in self.existing_subgraphs.keys():
-            # if I alredy have this graph I actualize the data (adding the patients and the support to this graph)
-            id = self.existing_subgraphs[new_graph.description]
-            self.all_subgraphs[id].add_patients(new_graph.patients)
-            self.all_subgraphs[id].add_support(new_graph.support)
-        else:
-            # if I don't have the graph I give it an id and I add it to the dataset
-            id = len(self.existing_subgraphs)
-            new_graph.id = id
-            self.all_subgraphs.append(new_graph)
-            self.existing_subgraphs[new_graph.description] = new_graph.id
-
-    def add_patient(self, newPatient):
-        self.patients.append(newPatient)
-
-    def sort_by_support(self):
-        import operator
-        self.all_subgraphs.sort(key=operator.attrgetter('support'), reverse=True)
-        # for i in range(len(self.all_subgraphs)):
-        #     self.all_subgraphs[i].id = i
-        #     self.existing_subgraphs[self.all_subgraphs[i].description] = i
-
-    def print_all(self):
-        print 'Report of data:'
-        print 'number of subgraphs', len(self.all_subgraphs)
-        print 'number of patients', len(self.patients)
-        for graph in self.all_subgraphs[:5]:
-            graph.print_subgraph()
-
-    def print_most_common(self, number_of_graphs):
-        print 'number of subgraphs', len(self.all_subgraphs)
-        for graph in self.sort_by_support()[:number_of_graphs]:
-            graph.print_subgraph()
-
-    def purge_less_common_subgraphs(self, min):
-        self.all_subgraphs = [graph for graph in self.all_subgraphs if graph.support > min]
-        to_mantain = [graph.description for graph in self.all_subgraphs]
-        for i in range(len(self.patients)):
-            new = {key: val for key, val in self.patients[i].graphs.items() if key in to_mantain}
-            self.patients[i].graphs = None
-            self.patients[i].graphs = new
-
-    @staticmethod
-    def save_to_file(filepath, dataobject):
-        fileObject = open(filepath, 'wb')
-        pickle.dump(dataobject, fileObject)
-
-    @staticmethod
-    def load_from_file(filepath):
-        fileObject = open(filepath, 'rb')
-        dataobject = pickle.load(fileObject)
-        return dataobject
 
 
 def load_report(path, cores):
@@ -241,207 +110,97 @@ def load_report(path, cores):
     return report
 
 
-def generate_subgraphs(gspan_file_name, s, data_path, gspan_data_folder):
-    filepath = data_path + gspan_data_folder + gspan_file_name + '.txt'
-    outputpath = data_path + '/temporal_gspan_data/'
-    try:
-        os.mkdir(outputpath)
-    except:
-        pass
-    outputfile = data_path + '/temporal_gspan_data/' + gspan_file_name
-
-    command = shlex.split("/home/raquel/Documents/DataMining-gSpan/build/gbolt -input_file " + filepath +
-                          " -pattern 1 -support " + str(
-        s) + " -output_file " + outputfile)
-    # I want no output from gspan
-    p = subprocess.call(command, stderr=open(os.devnull, 'wb'))
-    report = load_report(outputfile, 8)
-    return report
 
 
-from gspan_mining.config import parser
-from gspan_mining.gspan import gSpan
 
 
-def generate_subgraphs_one_core(gspan_file_name, s, data_path, gspan_data_folder, l=2, plot=False):
-    filepath = data_path + gspan_data_folder + gspan_file_name + '.txt'
-    args_str = ' -s ' + str(s) + ' -l ' + str(l) + ' -u 4 -v False ' + '-p ' + str(plot) + ' ' + filepath
-    FLAGS, _ = parser.parse_known_args(args=args_str.split())
-    gs = gSpan(
-        database_file_name=FLAGS.database_file_name,
-        min_support=FLAGS.min_support,
-        min_num_vertices=FLAGS.lower_bound_of_num_vertices,
-        max_num_vertices=FLAGS.upper_bound_of_num_vertices,
-        max_ngraphs=FLAGS.num_graphs,
-        is_undirected=(not FLAGS.directed),
-        verbose=FLAGS.verbose,
-        visualize=FLAGS.plot,
-        where=FLAGS.where
-    )
-
-    gs.run()
-    report = gs._report_df
-    gs = None
-    return report
-
-
-def process_patient(patient_id, max_distance, min_support, data_path, gspan_data_folder, plot_graph=False):
-    """
-    This function generates an array of subgraphs instances using the report returned by gspan
-    :param patient_id:
-    :param max_distance:
-    :param min_support:
-    :param plot_graph:
-    :return:
-    """
-    if plot_graph:
-        plot_one_file(patient_id)
-
-    if not os.path.isfile(data_path + gspan_data_folder + patient_id + '.txt'):
-        generate_one_patient_graph(patient_id, max_distance, general_data_path=data_path, gspan_path=gspan_data_folder,
-                                   with_vertex_weight=False,
-                                   with_vertex_chromosome=False,
-                                   with_edge_weight=False)
-    try:
-        report = generate_subgraphs_one_core(patient_id, s=min_support, data_path=data_path,
-                                             gspan_data_folder=gspan_data_folder)
-
-        patient = Patient_instance(patient_id)
-
-        subgraphs = []
-        for i in report.index:
-            graph_description = report['description'][i]
-            graph_support = report['support'][i]
-
-            patient.add_graph(graph_description, graph_support)
-
-            subgraph = Subgraph_instance(graph_description)
-            subgraph.add_patients([patient_id])
-            subgraph.add_support(graph_support)
-            subgraphs.append(subgraph)
-    except Exception as e:
-        print(e)
-        print(patient_id, 'has no graphs')
-        patient = Patient_instance(patient_id)
-        subgraphs = []
-
-    return subgraphs, patient
-
-
-def process_list_of_patients(patients, max_distance, min_support, data_path, gspan_data_folder, processed_path):
-    data = Data()
-    print 'number of patients: ', len(patients)
-    f = open(processed_path, 'w')
-    i = 0
-    for patient_id in patients:
-        f.write(str(i) + ' ' + patient_id)
-        # print(str(i) + ' ' + patient_id)
-        f.write('\n')
-        subgraphs, patient_instance = process_patient(patient_id, max_distance, min_support=min_support,
-                                                      data_path=data_path, gspan_data_folder=gspan_data_folder)
-        data.add_patient(patient_instance)
-        f.write('subgraphs: ' + str(len(subgraphs)))
-        f.write('\n')
-        for graph in subgraphs:
-            data.add_subgraph(graph)
-        i += 1
-
-    # data.print_all()
-
-    file_path = data_path + '/raw_processed_data' + '/data_' + str(len(patients)) + '_' + str(min_support) + '_' + str(
-        max_distance) + '.pkl'
-    Data().save_to_file(file_path, data)
-
-    return file_path
-
-
-def generate_dataset_gspan(path, data_path, min_graphs, name='classification_csv'):
-    """
-    This function generates a dataset using the subgraphs of the patients and the metadata.
-    :param path:
-    :return:
-    """
-    print('Generating csv..')
-    metadata = pd.read_csv(data_path + '/raw_original_data/metadatos_v2.0.csv')
-    metadata = metadata.set_index('sampleID')
-
-    data = Data().load_from_file(path)
-    data.sort_by_support()
-    data.purge_less_common_subgraphs(min_graphs)
-    graph_description_df = pd.DataFrame(columns=['id', 'description'])
-    graph_description_df['id'] = 0
-    graph_description_df['description'] = ''
-    patients_id = [p.id for p in data.patients]
-    selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
-    graph_columns = ['graph_' + str(graph.id) for graph in data.all_subgraphs]
-    all_columns = np.append(metadata.columns, graph_columns).flatten()
-
-    graphs_dataset = pd.DataFrame(columns=all_columns)
-    graphs_dataset = pd.concat([graphs_dataset, selected_patients_metadata])
-    # Put 0 in all the columns of this patient
-    graphs_dataset.loc[:, graph_columns] = 0
-    i = 0
-    # print 'Patients without metadata: '
-    for patient in data.patients:
-        if patient.id in metadata.index:
-            # if i %100 ==0:
-            #     print i
-            for graph_description in patient.graphs.keys():
-                id = data.existing_subgraphs[graph_description]
-                column = 'graph_' + str(id)
-                graph_description_df.loc[id, 'id'] = id
-                graph_description_df.loc[id, 'description'] = graph_description
-                # Put the support of the graph corresponding to this patient
-                graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
-            i += 1
-        else:
-            # TODO: move this files to another folder instead of printing them
-            # print(patient.id)
-            pass
-
-    # I'll try to add chromosome relative information.
-    chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
-                   '19', '20', '21', '22', 'X', 'Y']
-    graphs_dataset['number_of_breaks'] = 0
-
-    svclass = ['DUP', 'DEL', 'TRA', 'h2hINV', 't2tINV']
-
-    for chrom in chromosomes:
-        graphs_dataset['chr_' + str(chrom)] = 0
-
-    for cls in svclass:
-        graphs_dataset[cls] = 0
-
-    for patient in graphs_dataset.index:
-        patient_path = data_path + '/raw_original_data/allfiles/' + patient + '.vcf.tsv'
-        patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
-        # print(patient_breaks.columns, patient_breaks.shape)
-
-        number_of_breaks = len(patient_breaks)
-        graphs_dataset.loc[patient, 'number_of_breaks'] = number_of_breaks
-
-        contained_chromosomes = patient_breaks[['#chrom1', 'chrom2']].apply(pd.Series.value_counts)
-        contained_chromosomes = contained_chromosomes.fillna(0)
-        contained_chromosomes[['#chrom1', 'chrom2']] = contained_chromosomes[['#chrom1', 'chrom2']].astype(int)
-        contained_chromosomes['chromosome'] = contained_chromosomes.index
-        contained_chromosomes['count'] = contained_chromosomes['#chrom1'] + contained_chromosomes['chrom2']
-        for chrom in contained_chromosomes.index:
-            graphs_dataset.loc[patient, ['chr_' + str(chrom)]] = contained_chromosomes.loc[chrom, ['count']].values[0]
-
-        count_svclass = patient_breaks[['svclass', ]].apply(pd.Series.value_counts)
-        for svclass in count_svclass.index:
-            graphs_dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
-
-    print(graph_description_df)
-    try:
-        os.mkdir(data_path + '/datasets/')
-    except:
-        pass
-
-    graph_description_df.to_csv(data_path + '/datasets/' + name + 'graph_desc' + '.csv')
-    graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
-
-    print('Csv generated')
+# def generate_dataset_gspan(path, data_path, min_graphs, name='classification_csv'):
+#     """
+#     This function generates a dataset using the subgraphs of the patients and the metadata.
+#     :param path:
+#     :return:
+#     """
+#     print('Generating csv..')
+#     metadata = pd.read_csv(data_path + '/raw_original_data/metadatos_v2.0.csv')
+#     metadata = metadata.set_index('sampleID')
+#
+#     data = Data().load_from_file(path)
+#     data.sort_by_support()
+#     data.purge_less_common_subgraphs(min_graphs)
+#     graph_description_df = pd.DataFrame(columns=['id', 'description'])
+#     graph_description_df['id'] = 0
+#     graph_description_df['description'] = ''
+#     patients_id = [p.id for p in data.patients]
+#     selected_patients_metadata = metadata.loc[metadata.index.isin(patients_id)]
+#     graph_columns = ['graph_' + str(graph.id) for graph in data.all_subgraphs]
+#     all_columns = np.append(metadata.columns, graph_columns).flatten()
+#
+#     graphs_dataset = pd.DataFrame(columns=all_columns)
+#     graphs_dataset = pd.concat([graphs_dataset, selected_patients_metadata])
+#     # Put 0 in all the columns of this patient
+#     graphs_dataset.loc[:, graph_columns] = 0
+#     i = 0
+#     # print 'Patients without metadata: '
+#     for patient in data.patients:
+#         if patient.id in metadata.index:
+#             # if i %100 ==0:
+#             #     print i
+#             for graph_description in patient.graphs.keys():
+#                 id = data.existing_subgraphs[graph_description]
+#                 column = 'graph_' + str(id)
+#                 graph_description_df.loc[id, 'id'] = id
+#                 graph_description_df.loc[id, 'description'] = graph_description
+#                 # Put the support of the graph corresponding to this patient
+#                 graphs_dataset.loc[patient.id, column] = patient.graphs[graph_description]
+#             i += 1
+#         else:
+#             # TODO: move this files to another folder
+#             # print(patient.id)
+#             pass
+#
+#     # I'll try to add chromosome relative information.
+#     chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+#                    '19', '20', '21', '22', 'X', 'Y']
+#     graphs_dataset['number_of_breaks'] = 0
+#
+#     svclass = ['DUP', 'DEL', 'TRA', 'h2hINV', 't2tINV']
+#
+#     for chrom in chromosomes:
+#         graphs_dataset['chr_' + str(chrom)] = 0
+#
+#     for cls in svclass:
+#         graphs_dataset[cls] = 0
+#
+#     for patient in graphs_dataset.index:
+#         patient_path = data_path + '/raw_original_data/allfiles/' + patient + '.vcf.tsv'
+#         patient_breaks = pd.read_csv(patient_path, sep='\t', index_col=None)
+#         # print(patient_breaks.columns, patient_breaks.shape)
+#
+#         number_of_breaks = len(patient_breaks)
+#         graphs_dataset.loc[patient, 'number_of_breaks'] = number_of_breaks
+#
+#         contained_chromosomes = patient_breaks[['#chrom1', 'chrom2']].apply(pd.Series.value_counts)
+#         contained_chromosomes = contained_chromosomes.fillna(0)
+#         contained_chromosomes[['#chrom1', 'chrom2']] = contained_chromosomes[['#chrom1', 'chrom2']].astype(int)
+#         contained_chromosomes['chromosome'] = contained_chromosomes.index
+#         contained_chromosomes['count'] = contained_chromosomes['#chrom1'] + contained_chromosomes['chrom2']
+#         for chrom in contained_chromosomes.index:
+#             graphs_dataset.loc[patient, ['chr_' + str(chrom)]] = contained_chromosomes.loc[chrom, ['count']].values[0]
+#
+#         count_svclass = patient_breaks[['svclass', ]].apply(pd.Series.value_counts)
+#         for svclass in count_svclass.index:
+#             graphs_dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
+#
+#     print(graph_description_df)
+#     try:
+#         os.mkdir(data_path + '/datasets/')
+#     except:
+#         pass
+#
+#     graph_description_df.to_csv(data_path + '/datasets/' + name + 'graph_desc' + '.csv')
+#     graphs_dataset.to_csv(data_path + '/datasets/' + name + '.csv')
+#
+#     print('Csv generated')
 
 
 def generate_dataset(patients, data_path, output_path, name='classification_dataset.csv'):
@@ -464,19 +223,23 @@ def generate_dataset(patients, data_path, output_path, name='classification_data
     dataset = pd.DataFrame(columns=all_columns)
     dataset = pd.concat([dataset, metadata])
     # initialize the graph related columns
-    dataset.loc[:, graph_columns] = 0
+    # dataset.loc[:, graph_columns] = 0
 
     i = 0
-    for patient in patients:
+    for patient in metadata.index:
         g, edge_list, matrix = generateTRAGraph(patient=patient, data_path=data_path, output_path='', connected_only=True, plot_graph=False)
-        # print matrix
-        # print [e for e in edge_list]
+        dataset.loc[patient, 'connected_components'] = len(list(nx.connected_component_subgraphs(g)))
+        # the max of the number of vertex of the connected components of the graph
+        if len(list(nx.connected_component_subgraphs(g))) > 0:
+            dataset.loc[patient, 'connected_components_max_size'] = np.max(
+                [len(list(component.nodes())) for component in nx.connected_component_subgraphs(g)])
+        else:
+            dataset.loc[patient, 'connected_components_max_size'] = 0
         for edge in edge_list:
             edge = edge.split(' ')
             if edge[0]  in ['X', 'Y'] and edge[1] in ['X','Y']:
                 edge_column = '(' + 'X' + ',' + 'Y' + ')'
             elif edge[0] in ['X', 'Y']:
-                print(edge)
                 edge_column = '(' + edge[1] + ',' + edge[0] + ')'
             elif edge[1] in ['X', 'Y']:
                 edge_column = '(' + edge[0] + ',' + edge[1] + ')'
@@ -534,61 +297,10 @@ def generate_dataset(patients, data_path, output_path, name='classification_data
         count_svclass = patient_breaks[['svclass', ]].apply(pd.Series.value_counts)
         for svclass in count_svclass.index:
             dataset.loc[patient, [svclass]] = count_svclass.loc[svclass, ['svclass']].values[0]
-
+    print(output_path + '/' + name)
     dataset.to_csv(output_path +'/'+ name)
 
 
-def main_gspan():
-    # This variables are global to simplify testing the code, will be removed later:
-    NUMBER_OF_SAMPLES = -1
-
-    MIN_GRAPHS = 100
-
-    MAX_DISTANCE = 2000
-
-    supports = [1, ]  # 0.9, 0.8]
-
-    time_per_support = {}
-    for support in supports:
-        init = time.time()
-
-        MIN_SUPPORT = support
-        # Data paths:
-        DATAPATH = '../../data_chromosome'
-
-        GSPAN_DATA_FOLDER = '/all_files_gspan_' + str(MAX_DISTANCE) + '/'
-
-        PROCESSED_PATH = DATAPATH + '/raw_processed_data/processsed_' + str(NUMBER_OF_SAMPLES) + \
-                         '_' + str(MIN_SUPPORT) + '_' + str(MAX_DISTANCE) + '.txt'
-
-        try:
-            os.mkdir(DATAPATH + GSPAN_DATA_FOLDER)
-        except:
-            pass
-        try:
-            os.mkdir(DATAPATH + '/raw_processed_data')
-        except:
-            pass
-
-        # Directory containing the files
-        data_path = DATAPATH + '/raw_original_data/allfiles'
-        all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
-        print('Generating the raw data...')
-        file_path = process_list_of_patients(all_patients, max_distance=MAX_DISTANCE, min_support=MIN_SUPPORT,
-                                             gspan_data_folder=GSPAN_DATA_FOLDER, data_path=DATAPATH,
-                                             processed_path=PROCESSED_PATH)
-        # file_path = '../../data/raw_processed_data/data_2597_' + str(MIN_SUPPORT) + '_2000.pkl'
-        name = 'classification_dataset_' + str(NUMBER_OF_SAMPLES) + '_' + str(MIN_SUPPORT) + '_' + str(
-            MAX_DISTANCE) + '_nan'
-
-        generate_dataset_gspan(path=file_path, data_path=DATAPATH, min_graphs=MIN_GRAPHS, name=name)
-
-        end_time = timedelta(seconds=time.time() - init)
-        time_per_support[support] = end_time
-
-    for key in time_per_support.keys():
-        print 'support:', key
-        print 'time:', time_per_support[key]
 
 
 def main():

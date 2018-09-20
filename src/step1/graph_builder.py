@@ -164,7 +164,6 @@ def generateTRAGraph(patient, data_path, output_path='', connected_only=True, pl
     '''
     import pandas as pd
     from natsort import natsorted
-    import numpy as np
     import networkx as nx
     from matplotlib import pyplot as plt
     import gc

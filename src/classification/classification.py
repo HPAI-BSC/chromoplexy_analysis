@@ -217,7 +217,7 @@ def only_random_forest(X_train, y_train, X_test, y_test, name, path,
                   "min_samples_split": stats.randint(2, 11),
                   "min_samples_leaf": stats.randint(1, 20),
                   "bootstrap": [True, False],
-                  "max_features": [20, 50, 100, 150, 200, 'auto', 'log2', None],
+                  "max_features": ['auto', 'log2', None],
                   # "oob_score": [True, False],
                   "criterion": ["gini", "entropy"]}
 
@@ -314,7 +314,7 @@ def nan_imputing(df):
     return fancy_imputed
 
 
-def test_with_some_datasets_no_meta(dataset_files):
+def test_with_some_datasets_only_chrom_info(dataset_files):
     for dataset_file in dataset_files:
         path = DATAPATH + '/datasets/' + dataset_file
         # try:
@@ -326,27 +326,24 @@ def test_with_some_datasets_no_meta(dataset_files):
                 X = df.drop(['Unnamed: 0', 'histology_tier2', 'donor_age_at_diagnosis', 'donor_sex', 'tumor_stage1',
                              'tumor_stage2'], axis=1)
 
-                # for column in X.columns:
-                #     if 'chr' in column:
-                #         X = X.drop(column, axis=1)
-                #     if 'DUP' in column:
-                #         X = X.drop(column, axis=1)
-                #     if 'DEL' in column:
-                #         X = X.drop(column, axis=1)
-                #     if 'TRA' in column:
-                #         X = X.drop(column, axis=1)
-                #     if 'h2hINV' in column:
-                #         X = X.drop(column, axis=1)
-                #     if 't2tINV' in column:
-                #         X = X.drop(column, axis=1)
-                #     if 'number_of_breaks' in column:
-                #         X = X.drop(column, axis=1)
+                for column in X.columns:
+                    if 'chr' in column:
+                        X = X.drop(column, axis=1)
+                    if 'DUP' in column:
+                        X = X.drop(column, axis=1)
+                    if 'DEL' in column:
+                        X = X.drop(column, axis=1)
+                    if 'TRA' in column:
+                        X = X.drop(column, axis=1)
+                    if 'h2hINV' in column:
+                        X = X.drop(column, axis=1)
+                    if 't2tINV' in column:
+                        X = X.drop(column, axis=1)
+                    if 'number_of_breaks' in column:
+                        X = X.drop(column, axis=1)
                 X_train, X_test, Y_train, Y_test = \
                     train_test_split(X, y, stratify=y, test_size=.2, random_state=42)
                 print 'Dataset', dataset_file
-                scaler = MinMaxScaler()
-                # X_train[X_train.columns] = scaler.fit_transform(X_train[X_train.columns])
-                # X_test[X_test.columns] = scaler.fit_transform(X_test[X_test.columns])
                 only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file, path=DATAPATH + '/plots/trees')
                 X_train['histology_tier1'] = Y_train
                 X_test['histology_tier1'] = Y_test
@@ -356,49 +353,78 @@ def test_with_some_datasets_no_meta(dataset_files):
                 print(e)
 
 
-def test_with_some_datasets(dataset_files):
-    for dataset_file in dataset_files:
-        path = DATAPATH + '/datasets/' + dataset_file
+def test_with_some_datasets(dataset_files_paht):
+    for path in dataset_files_paht:
         try:
-            if '.csv' in dataset_file and 'graph' not in dataset_file:
-                df = pd.read_csv(path)
-                y = df.pop('histology_tier1')
-                X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
-                X_train, X_test, Y_train, Y_test = \
-                    train_test_split(pd.get_dummies(X), y, stratify=y, test_size=.2, random_state=42)
-                X_train = nan_imputing(X_train)
-                X_test = nan_imputing(X_test)
-                X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + \
-                                              X_train['t2tINV']
-                X_test['number_of_breaks'] = X_test['DUP'] + X_test['DEL'] + X_test['TRA'] + X_test['h2hINV'] + X_test[
-                    't2tINV']
-                for column in X_train.columns:
-                    if 'chr' in column:
-                        X_train['proportion_' + column] = 0
-                        X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
-                                                                           np.float32(X_train[['number_of_breaks']]))
-                        X_test['proportion_' + column] = 0
-                        X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
-                                                                          np.float32(X_test[['number_of_breaks']]))
+            df = pd.read_csv(path)
+            y = df.pop('histology_tier1')
+            X = df.drop(['Unnamed: 0', 'histology_tier2'], axis=1)
+            X_train, X_test, Y_train, Y_test = \
+                train_test_split(pd.get_dummies(X), y, stratify=y, test_size=.2, random_state=42)
+            X_train = nan_imputing(X_train)
+            X_test = nan_imputing(X_test)
+            X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + \
+                                          X_train['t2tINV']
+            X_test['number_of_breaks'] = X_test['DUP'] + X_test['DEL'] + X_test['TRA'] + X_test['h2hINV'] + X_test[
+                't2tINV']
+            for column in X_train.columns:
+                if 'chr' in column:
+                    X_train['proportion_' + column] = 0
+                    X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
+                                                                       np.float32(X_train[['number_of_breaks']]))
+                    X_test['proportion_' + column] = 0
+                    X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
+                                                                      np.float32(X_test[['number_of_breaks']]))
 
-                    if 'DUP' in column or 'DEL' in column or 'TRA' in column or 'h2hINV' in column or 't2tINV' in column:
-                        X_train['proportion_' + column] = 0
-                        X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
-                                                                           np.float32(X_train[['number_of_breaks']]))
-                        X_test['proportion_' + column] = 0
-                        X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
-                                                                          np.float32(X_test[['number_of_breaks']]))
+                if 'DUP' in column or 'DEL' in column or 'TRA' in column or 'h2hINV' in column or 't2tINV' in column:
+                    X_train['proportion_' + column] = 0
+                    X_train[['proportion_' + column]] = np.true_divide(np.float32(X_train[[column]]),
+                                                                       np.float32(X_train[['number_of_breaks']]))
+                    X_test['proportion_' + column] = 0
+                    X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
+                                                                      np.float32(X_test[['number_of_breaks']]))
 
-                print 'Dataset', dataset_file
-                only_random_forest(X_train, Y_train, X_test, Y_test, name=dataset_file.replace('.csv', '_meta.csv'),
-                                   path=DATAPATH + '/plots/trees')
+            print 'Dataset', path
+            print X_train.head()
+            only_random_forest(X_train, Y_train, X_test, Y_test, name='with_max_cc',
+                               path=DATAPATH + '/plots/trees')
 
-                X_train['histology_tier1'] = Y_train
-                X_test['histology_tier1'] = Y_test
-                X_train.to_csv(DATAPATH + '/datasets/clean/' + dataset_file.replace('.csv', '_clean_meta.csv'))
+            X_train['histology_tier1'] = Y_train
+            X_test['histology_tier1'] = Y_test
+            X_train.to_csv(path.replace('.csv', '_clean_meta.csv'))
         except Exception as e:
-            print(dataset_file)
+            print(path)
             print(e)
+
+
+def try_svm(X_train, Y_train, X_test, Y_test, name='with_max_cc',
+                               path=DATAPATH + '/plots/trees'):
+    from sklearn.svm import SVC
+    import random
+    n_iter_search = 5
+    # f = open('../../data/best_params' + 'random_forest' + name + '.txt', 'w')
+    param_dist = {"C": stats.uniform(0, 1),
+                  "kernel": ['rbf', 'linear', 'poly', 'sigmoid'],
+                  "decision_function_shape": ['ovo', 'ovr']
+                  }
+    labels = ['ECTODERM', 'NEURAL_CREST', 'MESODERM', 'ENDODERM']
+    clf = SVC(class_weight='balanced')
+
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist, iid=False,
+                                       n_iter=n_iter_search, pre_dispatch=3, n_jobs=-1)
+    random_search.fit(X_train, Y_train.values.ravel())
+    print('trained')
+    score = random_search.score(X_test, Y_test)
+
+    # f.write('Random Forest ' + str(score))
+    print 'SVM', score
+    y_test_pred = random_search.predict(X_test)
+    # Compute confusion matrix
+    class_names = labels
+    cnf_matrix = metrics.confusion_matrix(Y_test, y_test_pred,
+                                          labels=class_names)
+
+    print(cnf_matrix)
 
 
 def one_vs_all_random_forest(dataset_file):
@@ -492,11 +518,12 @@ def one_vs_all_random_forest(dataset_file):
 def main():
     # datasets = ['classification_dataset_2601_0.8_2000.csv', 'classification_dataset_2601_0.8_1500.csv']
     datasets = os.listdir(DATAPATH + '/datasets/')
-    print('No metadata')
-    test_with_some_datasets_no_meta(datasets)
+    datasets = ['../../data_chromosome/datasets/dataset_-1_chrom.csv']
+    # print('No metadata')
+    # test_with_some_datasets_no_meta(datasets)
     print('All data')
     test_with_some_datasets(datasets)
-    one_vs_all_random_forest('dataset_-1_chrom.csv')
+    # one_vs_all_random_forest('dataset_-1_chrom.csv')
 
 
 if __name__ == '__main__':

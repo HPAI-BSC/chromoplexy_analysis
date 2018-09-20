@@ -145,15 +145,15 @@ def get_traslocation_graph(filename, general_data_path, gspan_path='/traslocatio
     """
     subgraphs = []
     # Directory containing the files
-    data_path = general_data_path + '/raw_original_data/allfiles'
+
     # Iterate over the files
     count = 0
     patient = filename.replace('.vcf.tsv.','')
 
-    breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename),only_tra=True)
-    if len(breaks) == 0:
-        print 'WARNING: Empty data file',filename
-        return
+    # breaks, list_of_pairs = load_breaks(os.path.join(data_path, filename),only_tra=True)
+    # if len(breaks) == 0:
+    #     print 'WARNING: Empty data file',filename
+    #     return
     # adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights = generateGraph(breaks, list_of_pairs,
     #                                                                                max_distance)
 
@@ -163,15 +163,49 @@ def get_traslocation_graph(filename, general_data_path, gspan_path='/traslocatio
         if len(c.nodes()) >= 3 and len(c.nodes()) >= 3:
             subgraphs.append(c)
             count += 1
-    print(g.)
+    print(nx.info(g))
     # store
     try:
-        os.mkdir(general_data_path + gspan_path)
+        os.mkdir(gspan_path)
     except:
         pass
 
-    with open(general_data_path + gspan_path + filename + '.txt', 'w') as f:
-        pass
+    with open(gspan_path + filename + '.txt', 'w') as f:
+        counter = 0
+        for g in subgraphs:
+            f.write('t # ' + str(counter) + '\n')
+            counter += 1
+            # Iterate over vertices
+            count = 0
+            for v in g.nodes():
+                # I represent the vertex as the chromosome (num format) with label the chromosome in char.
+                # v id label
+                label = str(v)
+                vid = chrom_to_num(label)
+                f.write('v ' + vid + ' ' + label + '\n')
+                count += 1
+            # Iterate over all edges
+            for edge in g.edges():
+                weight = g.edges[edge]['weight']
+                vid0 = chrom_to_num(str(edge[0]))
+                vid1 = chrom_to_num(str(edge[1]))
+                f.write('e ' + vid0 + ' ' + vid1 + ' ' + str(weight) + '\n')
+
+def chrom_to_num(label):
+    """
+    Transforms a chromosome label into its numeric correspondence:
+    Chrom 1:22 without changes
+    Chrom X -> 23
+    Chrom Y -> 24
+    :param label:
+    :return:
+    """
+    vid = label
+    if label == 'X':
+        vid = '23'
+    elif label == 'Y':
+        vid = '24'
+    return vid
 
 def main():
     if len(sys.argv) != 2:

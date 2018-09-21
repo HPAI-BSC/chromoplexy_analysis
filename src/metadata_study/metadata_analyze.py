@@ -51,7 +51,7 @@ try:
 except:
     pass
 
-
+# to jupyter
 def generate_csv():
     """
     This function generates a real dataset using the txt given and saves it as a csv.
@@ -79,7 +79,7 @@ def generate_csv():
 
     data.to_csv('../../data/raw_original_data/metadatos_v2.0.csv', index=False)
 
-
+#to jupyter
 def study_donor_age_vs_histology():
     df = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
     df_nans = df[df.isnull().any(axis=1)]
@@ -364,39 +364,7 @@ def deletions_per_chromosome():
     plt.savefig(DATAPATH + '/plots/' +'total_duplications.png')
     plt.close()
 
-
-def nan_imputing(df):
-    """
-    Courrent strategy for nans: replace with the most_frequent
-    TODO: replace with the most common age per cancer type.
-
-    Droped tumor_stage1 and tumor_stage2
-    :param df:
-    :return:
-    """
-    # Imput missing data with knn
-    from fancyimpute import MICE, KNN
-    fancy_imputed = df
-    print(df.head())
-    dummies = pd.get_dummies(df.drop('sampleID', axis=1))
-    imputed = pd.DataFrame(data=MICE().complete(dummies), columns=dummies.columns, index=dummies.index)
-    fancy_imputed.donor_age_at_diagnosis = imputed.donor_age_at_diagnosis
-
-    # imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
-    # imp.fit(df['donor_age_at_diagnosis'].values.reshape(-1, 1))
-    # df['donor_age_at_diagnosis'] = imp.fit_transform(df[['donor_age_at_diagnosis']]).ravel()
-    fancy_imputed['donor_age_at_diagnosis'] = fancy_imputed['donor_age_at_diagnosis'].astype(np.int)
-
-    # Drop tumor stage 1, it's very unbalanced
-    # df = df.drop('tumor_stage1', axis=1)
-    # # Drop tumor stage 2, it's very unbalanced + useless
-    # df = df.drop('tumor_stage2', axis=1)
-
-    fancy_imputed.to_csv('../../data/raw_original_data/clean_metadata_mice.csv', index=False)
-
-    return fancy_imputed
-
-
+# in jupyter
 def describe(df):
     """
     This function prints a report of the metadata and the representative plots
@@ -444,12 +412,39 @@ def describe(df):
         plt.savefig(plot_path + 'barplot_' + col)
 
 
+def search_for_correlations():
+    NUMBER_OF_SAMPLES = -1
+
+    # Directory containing the files
+    data_path = DATAPATH + '/raw_original_data/allfiles/'
+    all_patients = os.listdir(data_path)[:NUMBER_OF_SAMPLES]
+    all_patients = [p.replace('.vcf.tsv', '') for p in all_patients]
+
+    df = pd.read_csv('../../data_chromosome/datasets/dataset_-1_chrom.csv')
+
+    features = ['donor_age_at_diagnosis','donor_sex','histology_tier1','histology_tier2','tumor_stage1', 'tumor_stage2',
+                'connected_components','connected_components_max_size']
+    feature_pairs= [('donor_sex','donor_age_at_diagnosis'),('connected_components_max_size','donor_age_at_diagnosis'),
+                    ('connected_components','donor_age_at_diagnosis'),('histology_tier1','donor_age_at_diagnosis')
+                    ,('histology_tier2','donor_age_at_diagnosis'),('tumor_stage1','donor_age_at_diagnosis')
+                    ,('tumor_stage2','donor_age_at_diagnosis')
+                    ,('donor_sex','connected_components'),('histology_tier1','connected_components')
+                    ,('histology_tier2','connected_components'),('tumor_stage1','connected_components'),('tumor_stage2','connected_components')
+                    , ('donor_sex', 'connected_components_max_size'), ('histology_tier1', 'connected_components_max_size')
+                    , ('histology_tier2', 'connected_components_max_size'), ('tumor_stage1', 'connected_components_max_size'),
+                                ('tumor_stage2', 'connected_components_max_size')
+
+                    ]
+    for feature0,feature1 in feature_pairs:
+        sns.boxplot(x=df[feature0], y=df[feature1],showmeans=True)
+        plt.show()
+
+
 def main():
     # generate_csv()
-    # data = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
-    # clean = nan_imputing(data)
+    data = pd.read_csv('../../data/raw_original_data/metadatos_v2.0.csv')
     # clean = pd.read_csv('../../data/datasets/classification_dataset_-1_0.7_2000.csv')
-    deletions_per_chromosome()
+    search_for_correlations()
     # describe(clean)
     # study_donor_age_vs_histology()
 

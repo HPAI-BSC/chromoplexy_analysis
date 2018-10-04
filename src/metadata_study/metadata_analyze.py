@@ -1,14 +1,5 @@
 """
-TODO:
-    find a good strategy for imputing missing data,
-        for now i'm ussing the most frequent value
-
-        Bone cancer imputer: https://seer.cancer.gov/statfacts/html/bones.html
-
-        Breast cancer age imputer:https://seer.cancer.gov/statfacts/html/breast.html
-            Distribution
-
-    If the classes doesen't work I can merge ECTODERM and NEURAL_CREST
+This code performs a data analysis over the metadata and the patient files.
 """
 import warnings
 
@@ -119,8 +110,6 @@ from natsort import natsorted
 
 
 def plot_heatmap_traslocations(all_only_tra, name):
-    import seaborn as sns
-    sns.set()
     plt.figure(figsize=(15, 15))
 
     chromosomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
@@ -138,7 +127,7 @@ def plot_heatmap_traslocations(all_only_tra, name):
     plt.title('Traslocations per chromosome of ' + name)
     plt.savefig(DATAPATH + '/plots/tra_study/' + 'traslocations_' + name + '.png')
 
-
+# to jupyter
 def traslocations_frequency_per_chromosome():
     NUMBER_OF_SAMPLES = -1
 
@@ -252,7 +241,7 @@ def traslocations_frequency_per_chromosome():
     # print(all_ct_ECTODERM)
     # plt.xticks(range(len(D)), list(D.keys()), rotation=30)
 
-
+# to jupyter
 def deletions_per_chromosome():
     NUMBER_OF_SAMPLES = -1
 

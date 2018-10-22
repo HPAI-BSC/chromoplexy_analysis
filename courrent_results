@@ -1,0 +1,47 @@
+No metadata
+Dataset dataset_-1_chrom.csv
+Random Forest 0.6177606177606177
+[[ 12   3   3  24]
+ [  2  31  11  29]
+ [  1  20  67  58]
+ [  9  16  28 204]]
+All data
+Random Forest 0.7722007722007722
+[[ 16   1  17   8]
+ [  1  56   6  10]
+ [ 10   2 100  34]
+ [  7   1  27 222]]
+Dataset dataset_-1_chrom.csv
+One vs all  ECTODERM
+Random Forest 0.916988416988417
+[[ 16  26]
+ [ 11 465]]
+One vs all  NEURAL_CREST
+Random Forest 0.9633204633204633
+[[ 65   9]
+ [ 10 434]]
+One vs all  MESODERM
+Random Forest 0.7953667953667953
+[[ 78  68]
+ [ 43 329]]
+One vs all  ENDODERM
+Random Forest 0.8301158301158301
+[[216  41]
+ [ 43 218]]
+One vs all no meta ECTODERM
+Random Forest 0.918918918918919
+[[  6  36]
+ [  4 472]]
+One vs all no meta NEURAL_CREST
+Random Forest 0.8803088803088803
+[[ 26  48]
+ [ 13 431]]
+One vs all no meta MESODERM
+Random Forest 0.7374517374517374
+[[ 43 103]
+ [ 43 329]]
+One vs all no meta ENDODERM
+Random Forest 0.7046332046332047
+[[193  64]
+ [ 89 172]]
+

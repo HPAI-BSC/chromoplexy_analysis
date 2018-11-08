@@ -1,10 +1,22 @@
-results/*
-data
-data/*
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 *.pyc
+
+# venv and pycharm metadata
 venv/*
 .idea/*
 
-data_chromosome/
+# IPython notebook
+.ipynb_checkpoints
 
+# data paths
+results/*
+data
+data/*
+data_chromosome/
 *.png
+
+graph_analysis/data/*
+feature_extraction/data*

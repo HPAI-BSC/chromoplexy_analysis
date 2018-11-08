@@ -1,0 +1,74 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+%opening
+\title{Cliques analysis}
+\author{Dario Garcia-Gasulla, in collaboration with David Torrents,\\ Luisa Delgado, Juan Blanco Heredia, Armand Viltalta and \\Ferran Par\'{e}s. }
+
+
+\begin{document}
+
+\maketitle
+
+
+\section{}
+
+Distribution of cliques of size 3 (i.e., triangles) and cliques of size 4 per cancer type
+
+\begin{table}[]
+\centering
+\caption{My caption}
+\label{my-label}
+\begin{tabular}{l|l|l|l|l|l|l}
+Cancer & Valid & Empty & Mean of & StdDev of& Mean of & StdDev of \\ 
+type & instances  & instances & 3cliques & 3cliques & 4cliques & 4cliques \\ \hline 
+DLBC&7&0&0.29&0.45&0.0&0.0\\
+PAEN&70&16&0.27&0.92&0.0&0.0\\
+GBM&40&0&5.2&7.61&0.5&1.43\\
+BOCA&60&6&5.58&7.91&0.22&0.58\\
+BLCA&23&0&2.17&5.97&0.35&1.63\\
+UCEC&47&2&3.64&5.39&0.21&0.77\\
+THCA&30&18&0.17&0.37&0.0&0.0\\
+LINC&28&0&1.0&1.22&0.0&0.0\\
+CESC&20&0&1.95&2.85&0.35&1.15\\
+MALY&99&1&1.63&8.66&0.67&4.66\\
+LIHC&53&1&5.15&8.56&0.38&1.62\\
+READ&16&0&1.75&3.7&0.0&0.0\\
+LIRI&258&0&1.22&4.24&0.11&1.0\\
+HNSC&44&0&2.41&3.89&0.09&0.36\\
+STAD&38&0&3.97&8.27&0.16&0.71\\
+SKCM&37&0&10.38&15.83&1.76&3.91\\
+GACA&34&4&3.15&5.24&0.5&2.54\\
+COAD&44&0&1.64&3.84&0.09&0.36\\
+PACA&237&2&2.63&5.67&0.31&2.67\\
+RECA&70&4&0.13&0.48&0.0&0.0\\
+LUSC&48&0&5.31&9.43&0.83&4.44\\
+CLLE&91&5&0.03&0.23&0.0&0.0\\
+LICA&6&0&1.5&2.93&0.33&0.75\\
+CMDI&21&47&0.14&0.47&0.0&0.0\\
+OV&112&0&4.71&6.77&0.09&0.39\\
+BTCA&12&0&0.42&0.95&0.0&0.0\\
+ORCA&12&1&0.08&0.28&0.0&0.0\\
+SARC&34&0&35.0&83.32&11.15&45.94\\
+KIRP&27&6&0.59&1.91&0.04&0.19\\
+LGG&17&2&0.18&0.38&0.0&0.0\\
+LAML&8&18&0.0&0.0&0.0&0.0\\
+PRAD&214&1&1.67&3.75&0.02&0.14\\
+LUAD&36&1&1.25&2.02&0.03&0.16\\
+EOPC&64&5&0.91&3.53&0.11&0.87\\
+BRCA&209&2&3.67&6.29&0.07&0.3\\
+KIRC&37&0&0.59&1.62&0.0&0.0\\
+PBCA&204&32&0.12&0.46&0.0&0.0\\
+MELA&69&0&7.19&13.47&0.78&2.8\\
+KICH&42&3&0.86&3.98&0.05&0.3\\
+ESAD&87&2&4.41&6.31&0.23&0.97\\
+\hline
+ALL&2605&179&2.8&11.88&0.34&5.64\\
+
+
+ 
+\end{tabular}
+\end{table}
+
+
+\end{document}

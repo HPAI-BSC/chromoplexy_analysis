@@ -1,0 +1,30 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{graphicx}
+
+%opening
+\title{Preliminary data analytics on genomic breaks}
+\author{Dario Garcia-Gasulla, in collaboration with David Torrents,\\ Luisa Delgado, Juan Blanco Heredia, Armand Viltalta and \\Ferran Par\'{e}s. }
+
+\begin{document}
+
+\maketitle
+
+
+\section{Data overview}
+
+Data is obtained from 2,784 patients, with the corresponding breaks. All patients are considered as independent instances, and all breaks as independent variables. Each break has a source or target, which simply identifies an arbitrary order of break. There are 5 types of breaks as provided by the .vcf.tsv files: h2hINV, DEL, t2tINV, DUP, TRA.
+
+
+\section{Chromosome break distribution}
+
+First we plot the number of breaks per chromosome, regardless of type.
+
+\begin{figure}[h]
+\includegraphics[scale=0.2]{figures/All_Break_distribution_unnormalized.pdf}
+\caption{Distribution of breaks per chromosome. All brake types are aggregated. Values not normalized by chromosome length}
+\end{figure}
+
+
+\end{document}

@@ -1,0 +1,5 @@
+clique of 4 is not chromoplexy. explore in depth. for each clique, patient, choromosomes, initial and final of each vertex.
+
+figure out the numbers from exp3
+
+remove subgraphs with 2 edges

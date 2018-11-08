@@ -6,8 +6,8 @@ __pycache__/
 
 # venv and pycharm metadata
 venv/*
+*/.idea/*
 .idea/*
-
 # IPython notebook
 .ipynb_checkpoints
 
@@ -21,3 +21,4 @@ data_chromosome/
 graph_analysis/data/*
 feature_extraction/data*
 feature_extraction/venv/*
+graph_analysis/venv

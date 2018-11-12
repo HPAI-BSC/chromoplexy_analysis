@@ -1,5 +1,6 @@
 import networkx as nx
 
+
 def generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weights, self_links=False,
                     connected_only=True):
     '''
@@ -24,7 +25,7 @@ def generateNXGraph(adjacency_matrix, vertex_labels, vertex_ranges, vertex_weigh
     Output:
     '''
     import numpy as np
-    if self_links == False:
+    if not self_links:
         # Remove self-edges
         np.fill_diagonal(adjacency_matrix, 0)
     # Create graph
@@ -70,7 +71,7 @@ def printGraph(adjacency_matrix, vertex_labels):
     dic_labels = {}
     for n, v in zip(x.nodes(), vertex_labels):
         dic_labels[n] = v
-    nx.set_node_attributes(x,dic_labels, 'chromosome')
+    nx.set_node_attributes(x, dic_labels, 'chromosome')
     # Undirected, to avoid duplicity
     x.to_undirected()
     # print 'Number of vertices in networkX', x.number_of_nodes()
@@ -119,7 +120,7 @@ def getCliques(adjacency_matrix, vertex_labels):
     dic_labels = {}
     for n, v in zip(x.nodes(), vertex_labels):
         dic_labels[n] = v
-    nx.set_node_attributes(x, dic_labels,'chromosome')
+    nx.set_node_attributes(x, dic_labels, 'chromosome')
     # Undirected, to avoid duplicity
     x.to_undirected()
     # remove isolated vertices
@@ -140,8 +141,6 @@ def getAllCliques(adjacency_matrix, vertex_labels):
         The value in position x indicates the chromosome that the vertex at  
     position x belongs to.
     '''
-    import matplotlib
-    from matplotlib import pyplot as plt
     import networkx as nx
     import numpy as np
     # Remove self-edges
@@ -152,7 +151,7 @@ def getAllCliques(adjacency_matrix, vertex_labels):
     dic_labels = {}
     for n, v in zip(x.nodes(), vertex_labels):
         dic_labels[n] = v
-    nx.set_node_attributes(x, dic_labels,'chromosome')
+    nx.set_node_attributes(x, dic_labels, 'chromosome')
     # Undirected, to avoid duplicity
     x.to_undirected()
     # remove isolated vertices
@@ -179,8 +178,6 @@ def computeSubgraphs(adjacency_matrix, vertex_labels):
         The value in position x indicates the chromosome that the vertex at  
     position x belongs to.
     '''
-    import matplotlib
-    from matplotlib import pyplot as plt
     import networkx as nx
     import numpy as np
     # Remove self-edges
@@ -191,7 +188,7 @@ def computeSubgraphs(adjacency_matrix, vertex_labels):
     dic_labels = {}
     for n, v in zip(x.nodes(), vertex_labels):
         dic_labels[n] = v
-    nx.set_node_attributes(x, dic_labels,'chromosome')
+    nx.set_node_attributes(x, dic_labels, 'chromosome')
     # Undirected, to avoid duplicity
     x.to_undirected()
     # print 'Number of vertices in networkX', x.number_of_nodes()

@@ -105,7 +105,7 @@ def _generateNXGraphLite(adj_mat):
     return x
 
 
-def read_graphs_from_file(file_path):
+def _read_graphs_from_file(file_path):
     """ Reads the most common subgraphs and turns them into a nx graphs"""
     with open(file_path) as f:
         graphs = []
@@ -146,7 +146,7 @@ def read_graphs_from_file(file_path):
 
 def save_graphs_to_pdf(file_path):
     """ Plots the common subgraphs to a pdf"""
-    graphs, supports = read_graphs_from_file(file_path)
+    graphs, supports = _read_graphs_from_file(file_path)
     name = file_path.split('/')[-1]
     with PdfPages(PLOT_PATH + name.replace('.txt', '.pdf')) as pdf:
         for graph, support in zip(graphs, supports):
@@ -164,7 +164,7 @@ def save_graphs_to_pdf(file_path):
 
 def save_graphs_to_png(file_name):
     """ Plots the common subgraphs to a png"""
-    graphs, supports = read_graphs_from_file(file_name)
+    graphs, supports = _read_graphs_from_file(file_name)
     name = file_name.split('/')[-1]
     plt_num = 1
     y_size = len(graphs) * 6

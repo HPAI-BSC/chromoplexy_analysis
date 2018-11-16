@@ -14,6 +14,7 @@ graph_analysis
 |   |-- subgraphs
 |   └-- plots
 |-- src 
+|   |-- Example of use.ipynb
 |   |-- loader.py # loads the breask
 |   |-- graph_builder.py 
 |   |-- graphnx.py # Contains the graph creation and representation code
@@ -39,3 +40,27 @@ This file contains the graph basic functions.
 This file contains the graphnx related functions. 
 
 ## graph_pattern_extraction.py
+It runs using the next global variables: 
+
+````
+PATIENTS_PATH = '../data/allfiles/'
+GSPAN_COMPATIBLE_GRAPHS_PATH = '../data/allfiles_gspan/'
+PLOT_PATH = '../data/plots/'
+SUGRAPHS_PATH = '../data/subgraphs/'
+````
+
+
+This is the main graph patter file. It contains all the necessary functions to generate the patient graphs and run 
+gspan over them. 
+
+* *generate_all_patient_graphs(max_distance)*: generates all the patient graphs using the given distance and saves it 
+in the GSPAN_COMPATIBLE_GRAPHS_PATH folder. 
+* *call_gspan_from_library(file_path)*: It runs the installed gspan over the graphs on *file_path* and saves the subgraphs on 
+SUGRAPHS_PATH.
+* call_gspan_locally(filepath, outputpath, gspan_main_path, name): Same but from a downloaded gspan. 
+* _read_graphs_from_file(file_path): helper function to read the graphs. 
+* save_graphs_to_pdf(file_path): Plots the graphs of the file on *file_path* into a pdf.
+* save_graphs_to_png(file_name): Same but into a png. 
+
+
+The gspan implementation used on this project is [https://github.com/betterenvi/gSpan]

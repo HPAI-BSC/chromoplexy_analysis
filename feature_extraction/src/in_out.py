@@ -29,8 +29,7 @@ warnings.simplefilter('ignore')
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
-from datetime import timedelta
-import time
+
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -38,8 +37,6 @@ import networkx as nx
 from fancyimpute import IterativeImputer
 from sklearn.model_selection import train_test_split
 from natsort import natsorted
-from matplotlib import pyplot as plt
-import gc
 
 # Data paths:
 DATA_PATH = '../definitive_data_folder'
@@ -208,10 +205,6 @@ def preprocessing(df, hist1=True):
     X_train, X_test, Y_train, Y_test = train_test_split(pd.get_dummies(X), y, stratify=y, test_size=.2)
     X_train = nan_imputing(X_train)
     X_test = nan_imputing(X_test)
-    # X_train['number_of_breaks'] = X_train['DUP'] + X_train['DEL'] + X_train['TRA'] + X_train['h2hINV'] + \
-    #                              X_train['t2tINV']
-    # X_test['number_of_breaks'] = X_test['DUP'] + X_test['DEL'] + X_test['TRA'] + X_test['h2hINV'] + X_test[
-    #     't2tINV']
     for column in X_train.columns:
         if 'chr' in column:
             X_train['proportion_' + column] = 0
@@ -341,7 +334,6 @@ def generate_dataset(name, split=True, hist1=True):
         dataset = preprocessing_without_split(dataset)
         dataset.to_csv(OUTPUT_PATH + '/' + name + '.csv')
         return dataset
-
 
 
 def load_data(name):

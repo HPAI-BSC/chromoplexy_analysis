@@ -47,9 +47,6 @@ PATIENTS_PATH = DATA_PATH + '/allfiles'
 # The prgram will try to load the csv, if the csv does not exist it will generate it ussing the txt. 
 METADATA_PATH = DATA_PATH + '/metadatos_v2.0.csv'
 
-if not os.path.exists(METADATA_PATH):
-    generate_metadata_csv()
-
 OUTPUT_PATH = DATA_PATH + '/datasets'
 
 try:
@@ -232,6 +229,18 @@ def preprocessing(df, hist1=True):
             X_test[['proportion_' + column]] = np.true_divide(np.float32(X_test[[column]]),
                                                               np.float32(X_test[['number_of_breaks']]))
     return X_train, Y_train, X_test, Y_test
+
+
+def transform_y_to_only_one_class(Y, class_name):
+    """
+    Replace withe non target classes with OTHER to use with the one vs all analysis
+    :param Y:
+    :param class_name:
+    :return:
+    """
+    to_replace = [c for c in labels if c != class_name]
+    Y_class = Y.replace(to_replace=to_replace, value='OTHER')
+    return Y_class
 
 
 def generate_dataset(name, split=True, hist1=True):

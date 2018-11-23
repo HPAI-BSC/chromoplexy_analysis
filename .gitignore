@@ -22,3 +22,5 @@ graph_analysis/data/*
 feature_extraction/data*
 feature_extraction/venv/*
 graph_analysis/venv
+
+*metadatos*
